@@ -3,16 +3,5 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://${VERCEL_API_URL}/api/$1"
-    }
-  ],
-  "env": {
-    "VERCEL_API_URL": {
-      "description": "Backend API URL (e.g., your-api.onrender.com)"
-    }
-  }
+  "framework": "vite"
 }
