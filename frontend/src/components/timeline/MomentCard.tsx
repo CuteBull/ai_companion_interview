@@ -10,6 +10,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { format } from 'date-fns'
 import { Moment } from '../../services/momentService'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
+import { parseMomentCommentContent } from '../../utils/commentMedia'
 
 interface MomentCardProps {
   moment: Moment
@@ -246,10 +247,39 @@ const MomentCard: React.FC<MomentCardProps> = ({
                             {format(new Date(comment.created_at), 'yyyy年M月d日 HH:mm')}
                           </span>
                         </div>
-                        <p className="whitespace-pre-wrap text-[15px] leading-6 text-zinc-200">
-                          {comment.reply_to_name ? `回复${comment.reply_to_name}：` : ''}
-                          {comment.content}
-                        </p>
+                        {(() => {
+                          const parsed = parseMomentCommentContent(comment.content)
+                          const hasText = Boolean(parsed.text) || Boolean(comment.reply_to_name)
+                          return (
+                            <>
+                              {hasText && (
+                                <p className="whitespace-pre-wrap text-[15px] leading-6 text-zinc-200">
+                                  {comment.reply_to_name ? `回复${comment.reply_to_name}：` : ''}
+                                  {parsed.text}
+                                </p>
+                              )}
+
+                              {parsed.images.length > 0 && (
+                                <div className="mt-1">
+                                  {parsed.images.map((url, imageIndex) => (
+                                    <img
+                                      key={`${comment.id}-${url}-${imageIndex}`}
+                                      src={resolveMediaUrl(url)}
+                                      alt="评论图片"
+                                      className="h-20 w-20 cursor-zoom-in rounded-sm object-cover"
+                                      loading="lazy"
+                                      decoding="async"
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        window.open(resolveMediaUrl(url), '_blank', 'noopener,noreferrer')
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </button>
                   ))}

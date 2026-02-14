@@ -18,17 +18,21 @@ import {
   toggleMomentLike,
   updateMomentAvatarForUser,
 } from '../services/momentService'
+import { uploadFile } from '../services/api'
 import {
   DEFAULT_AVATAR_URL,
   TIMELINE_AVATAR_STORAGE_KEY,
 } from '../constants/avatarOptions'
 import { resolveMediaUrl } from '../utils/mediaUrl'
+import { encodeMomentCommentContent } from '../utils/commentMedia'
 
 interface CommentTarget {
   momentId: string
   parentId?: string
   replyToName?: string
 }
+
+const COMMENT_EMOJIS = ['🙂', '🥺', '🤗', '❤️', '✨', '😭', '😂', '👍', '🙏', '🌈']
 
 const TimelinePage: React.FC = () => {
   const [moments, setMoments] = useState<Moment[]>([])
@@ -43,7 +47,12 @@ const TimelinePage: React.FC = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR_URL)
   const [commentTarget, setCommentTarget] = useState<CommentTarget | null>(null)
   const [commentText, setCommentText] = useState('')
+  const [commentImageUrl, setCommentImageUrl] = useState<string | null>(null)
+  const [commentImageUploading, setCommentImageUploading] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const commentInputRef = useRef<HTMLInputElement>(null)
+  const commentImageInputRef = useRef<HTMLInputElement>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   const loadMoments = async (pageNum: number) => {
     try {
@@ -79,6 +88,16 @@ const TimelinePage: React.FC = () => {
     }, 30)
     return () => window.clearTimeout(timer)
   }, [commentTarget])
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   const commentPlaceholder = useMemo(() => {
     if (!commentTarget) return '先点某条动态的“评论”再输入'
@@ -215,8 +234,13 @@ const TimelinePage: React.FC = () => {
   }
 
   const handleSubmitComment = async () => {
-    const content = commentText.trim()
-    if (!commentTarget || !content || pendingCommentMomentId) return
+    if (!commentTarget || pendingCommentMomentId || commentImageUploading) return
+    const content = encodeMomentCommentContent(commentText, commentImageUrl ? [commentImageUrl] : [])
+    if (!content) return
+    if (content.length > 1000) {
+      alert('评论内容过长，请缩短文字或减少图片信息')
+      return
+    }
 
     await handleCreateComment(
       commentTarget.momentId,
@@ -226,7 +250,45 @@ const TimelinePage: React.FC = () => {
     )
 
     setCommentText('')
+    setCommentImageUrl(null)
+    setShowEmojiPicker(false)
     setCommentTarget(null)
+  }
+
+  const handleSelectEmoji = (emoji: string) => {
+    setCommentText((prev) => {
+      const next = `${prev}${emoji}`
+      return next.length > 1000 ? prev : next
+    })
+    setShowEmojiPicker(false)
+    window.requestAnimationFrame(() => {
+      commentInputRef.current?.focus()
+    })
+  }
+
+  const handlePickCommentImage = () => {
+    commentImageInputRef.current?.click()
+  }
+
+  const handleCommentImageSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setCommentImageUploading(true)
+    try {
+      const uploaded = await uploadFile(file)
+      setCommentImageUrl(uploaded.url)
+      if (uploaded.storage === 'local') {
+        alert('当前评论图片使用临时本地存储，服务重启或重新部署后可能失效。')
+      }
+    } catch (error) {
+      console.error('Upload comment image failed:', error)
+      alert('评论图片上传失败，请稍后再试')
+    } finally {
+      setCommentImageUploading(false)
+      commentInputRef.current?.focus()
+    }
   }
 
   const handleDeleteMoment = async (momentId: string) => {
@@ -251,7 +313,7 @@ const TimelinePage: React.FC = () => {
     loadMoments(nextPage)
   }
 
-  const commentDisabled = !commentTarget || !commentText.trim() || Boolean(pendingCommentMomentId)
+  const commentDisabled = !commentTarget || (!commentText.trim() && !commentImageUrl) || Boolean(pendingCommentMomentId) || commentImageUploading
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[460px] bg-black text-zinc-100">
@@ -357,8 +419,53 @@ const TimelinePage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <FaceSmileIcon className="h-7 w-7 text-zinc-500" />
+          {commentImageUrl && (
+            <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1">
+              <img
+                src={resolveMediaUrl(commentImageUrl)}
+                alt="评论图片预览"
+                className="h-10 w-10 rounded object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <button
+                type="button"
+                onClick={() => setCommentImageUrl(null)}
+                className="text-xs text-zinc-400 hover:text-zinc-200"
+              >
+                移除
+              </button>
+            </div>
+          )}
+
+          <div className="relative flex items-center gap-2">
+            <div ref={emojiPickerRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                aria-label="插入表情"
+              >
+                <FaceSmileIcon className="h-6 w-6" />
+              </button>
+
+              {showEmojiPicker && (
+                <div className="absolute bottom-11 left-0 z-40 w-48 rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl">
+                  <div className="grid grid-cols-5 gap-1">
+                    {COMMENT_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => handleSelectEmoji(emoji)}
+                        className="rounded px-1 py-1 text-xl hover:bg-zinc-800"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <input
               ref={commentInputRef}
               value={commentText}
@@ -375,9 +482,11 @@ const TimelinePage: React.FC = () => {
             />
             <button
               type="button"
+              onClick={handlePickCommentImage}
+              disabled={commentImageUploading}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
               aria-label="附加图片"
-              title="评论暂不支持图片"
+              title="上传评论图片"
             >
               <PhotoIcon className="h-5 w-5" />
             </button>
@@ -388,8 +497,15 @@ const TimelinePage: React.FC = () => {
               className="inline-flex h-9 items-center gap-1 rounded-md bg-zinc-700 px-3 text-sm font-medium text-zinc-100 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <PaperAirplaneIcon className="h-4 w-4" />
-              发送
+              {commentImageUploading ? '上传中...' : '发送'}
             </button>
+            <input
+              ref={commentImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCommentImageSelected}
+            />
           </div>
         </div>
       </div>
