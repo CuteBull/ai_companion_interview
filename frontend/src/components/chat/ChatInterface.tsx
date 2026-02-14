@@ -17,13 +17,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // 滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+    messagesEndRef.current?.scrollIntoView({ behavior })
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    // 仅在消息数量变化时平滑滚动，避免流式分片导致频繁动画卡顿
+    scrollToBottom('smooth')
+  }, [messages.length])
 
   // 加载指定会话的历史消息
   useEffect(() => {
@@ -66,32 +67,63 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
     message: string,
     imageUrls?: string[]
   ) => {
+    const nowIso = new Date().toISOString()
+    const baseId = Date.now().toString()
+    const aiMessageId = `${baseId}-ai`
+
     // 添加用户消息
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: baseId,
       role: 'user',
       content: message,
       image_urls: imageUrls,
-      created_at: new Date().toISOString(),
+      created_at: nowIso,
     }
-    setMessages(prev => [...prev, userMessage])
 
-    // 添加占位符AI消息
-    const aiMessageId = Date.now().toString() + '-ai'
+    // 同步插入用户消息和占位符AI消息，减少一次重渲染
     setMessages(prev => [
       ...prev,
+      userMessage,
       {
         id: aiMessageId,
         role: 'assistant',
         content: '',
-        created_at: new Date().toISOString(),
+        created_at: nowIso,
       },
     ])
+    scrollToBottom('auto')
 
     setIsSending(true)
 
     try {
       let aiResponse = ''
+      let streamErrored = false
+      let flushTimer: number | null = null
+
+      const flushAssistantContent = () => {
+        flushTimer = null
+        setMessages((prev) => {
+          if (prev.length === 0) return prev
+          const last = prev[prev.length - 1]
+
+          if (last.id === aiMessageId) {
+            if (last.content === aiResponse) return prev
+            const next = [...prev]
+            next[next.length - 1] = { ...last, content: aiResponse }
+            return next
+          }
+
+          return prev.map((msg) =>
+            msg.id === aiMessageId ? { ...msg, content: aiResponse } : msg
+          )
+        })
+        scrollToBottom('auto')
+      }
+
+      const scheduleFlush = () => {
+        if (flushTimer !== null || streamErrored) return
+        flushTimer = window.setTimeout(flushAssistantContent, 40)
+      }
 
       await streamChat(
         {
@@ -100,21 +132,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
           image_urls: imageUrls,
         },
         (chunk) => {
+          if (streamErrored) return
           aiResponse += chunk
-          // 更新AI消息内容
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === aiMessageId
-                ? { ...msg, content: aiResponse }
-                : msg
-            )
-          )
+          scheduleFlush()
         },
         (newSessionId) => {
           setCurrentSessionId(newSessionId)
           onSessionChange?.(newSessionId)
         },
         (error) => {
+          streamErrored = true
+          if (flushTimer !== null) {
+            window.clearTimeout(flushTimer)
+            flushTimer = null
+          }
           console.error('Chat error:', error)
           setMessages(prev =>
             prev.map(msg =>
@@ -123,8 +154,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
                 : msg
             )
           )
+          scrollToBottom('auto')
         }
       )
+
+      if (!streamErrored) {
+        if (flushTimer !== null) {
+          window.clearTimeout(flushTimer)
+          flushTimer = null
+        }
+        flushAssistantContent()
+      }
     } catch (error) {
       console.error('Chat failed:', error)
     } finally {

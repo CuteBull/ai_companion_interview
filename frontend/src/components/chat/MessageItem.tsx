@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Message } from '../../services/chatService'
 import { UserIcon } from '@heroicons/react/24/outline'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
@@ -126,6 +126,14 @@ const renderAssistantMarkdown = (content: string) => {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   const isUser = message.role === 'user'
+  const formattedTime = useMemo(
+    () => new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    [message.created_at]
+  )
+  const renderedAssistantContent = useMemo(
+    () => (isUser ? null : renderAssistantMarkdown(message.content)),
+    [isUser, message.content]
+  )
 
   return (
     <div className={`fade-rise flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -155,7 +163,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             {isUser ? '你' : 'AI陪伴助手'}
           </span>
           <span className="ml-1.5 text-[11px] opacity-75">
-            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {formattedTime}
           </span>
         </div>
 
@@ -166,7 +174,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
           </div>
         ) : (
           <div className="space-y-1 leading-[1.45]">
-            {renderAssistantMarkdown(message.content)}
+            {renderedAssistantContent}
           </div>
         )}
 
@@ -179,6 +187,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
                 src={resolveMediaUrl(url)}
                 alt={`图片 ${index + 1}`}
                 className="h-28 w-full rounded-lg object-cover ring-1 ring-black/5"
+                loading="lazy"
+                decoding="async"
               />
             ))}
           </div>
@@ -189,4 +199,4 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   )
 }
 
-export default MessageItem
+export default React.memo(MessageItem)

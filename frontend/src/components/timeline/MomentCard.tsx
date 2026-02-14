@@ -41,6 +41,8 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
           src={resolveMediaUrl(images[0])}
           alt="动态图片"
           className="max-h-80 w-auto max-w-[17rem] object-cover"
+          loading="lazy"
+          decoding="async"
         />
       </button>
     )
@@ -60,6 +62,8 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
             src={resolveMediaUrl(image)}
             alt={`动态图片 ${index + 1}`}
             className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         </button>
       ))}
@@ -122,6 +126,8 @@ const MomentCard: React.FC<MomentCardProps> = ({
           src={authorAvatar}
           alt={`${moment.author_name}头像`}
           className="h-12 w-12 rounded-md object-cover"
+          loading="lazy"
+          decoding="async"
         />
 
         <div className="min-w-0 flex-1">
@@ -230,6 +236,8 @@ const MomentCard: React.FC<MomentCardProps> = ({
                         src={getCommentAvatar(comment.user_name)}
                         alt={`${comment.user_name}头像`}
                         className="h-8 w-8 rounded object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">

@@ -116,6 +116,8 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
           src={resolveMediaUrl(selectedAvatar)}
           alt="用户头像"
           className="h-11 w-11 rounded-md object-cover"
+          loading="lazy"
+          decoding="async"
         />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -136,6 +138,8 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                     src={resolveMediaUrl(url)}
                     alt={`已选图片 ${index + 1}`}
                     className="h-24 w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <button
                     type="button"
