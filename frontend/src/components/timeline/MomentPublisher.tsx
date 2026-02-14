@@ -99,32 +99,32 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
   const disabled = publishing || uploading || (!content.trim() && imageUrls.length === 0)
 
   return (
-    <div className="surface-card p-4 md:p-5">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
       <div className="flex items-start gap-3">
         <img
           src={resolveMediaUrl(selectedAvatar)}
           alt="用户头像"
-          className="h-11 w-11 rounded-md object-cover ring-1 ring-stone-200"
+          className="h-11 w-11 rounded-md object-cover"
         />
 
         <div className="min-w-0 flex-1 space-y-3">
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            rows={3}
+            rows={2}
             placeholder="这一刻的想法..."
-            className="w-full resize-none rounded-xl border border-stone-200 bg-stone-50/90 px-3 py-2.5 text-sm text-stone-800 focus:border-emerald-400 focus:bg-white focus:outline-none"
+            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
             disabled={publishing}
           />
 
           {imageUrls.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {imageUrls.map((url, index) => (
-                <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg">
+                <div key={`${url}-${index}`} className="relative overflow-hidden rounded">
                   <img
                     src={resolveMediaUrl(url)}
                     alt={`已选图片 ${index + 1}`}
-                    className="h-20 w-full object-cover"
+                    className="h-24 w-full object-cover"
                   />
                   <button
                     type="button"
@@ -140,12 +140,12 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-stone-600">头像</span>
+            <span className="text-sm text-zinc-400">头像</span>
             <button
               type="button"
               onClick={handlePickAvatar}
               disabled={publishing || avatarUploading}
-              className="inline-flex items-center rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {avatarUploading ? '上传中...' : '从本地选择头像'}
             </button>
@@ -153,7 +153,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={() => onAvatarChange(DEFAULT_AVATAR_URL)}
               disabled={publishing || avatarUploading}
-              className="inline-flex items-center rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               恢复默认
             </button>
@@ -172,7 +172,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 type="button"
                 onClick={handlePickImages}
                 disabled={uploading || remainCount <= 0 || publishing}
-                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <PhotoIcon className="h-4 w-4" />
                 {uploading ? '上传中...' : `图片 (${imageUrls.length}/${MAX_IMAGES})`}
@@ -192,7 +192,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 onChange={(event) => setLocation(event.target.value)}
                 placeholder="所在位置（可选）"
                 maxLength={120}
-                className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 focus:border-emerald-400 focus:outline-none"
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
                 disabled={publishing}
               />
             </div>
@@ -201,7 +201,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={handlePublish}
               disabled={disabled}
-              className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {publishing ? '发布中...' : '发表'}
             </button>

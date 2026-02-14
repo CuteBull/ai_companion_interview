@@ -4,8 +4,12 @@ from app.core.config import settings
 
 async def api_key_middleware(request: Request, call_next):
     """API密钥验证中间件"""
-    # 跳过健康检查端点
-    if request.url.path.startswith("/api/health") or request.url.path == "/":
+    # 跳过健康检查、根路径和静态上传资源
+    if (
+        request.url.path.startswith("/api/health")
+        or request.url.path.startswith("/uploads/")
+        or request.url.path == "/"
+    ):
         return await call_next(request)
 
     # 如果未配置API_KEY，跳过验证

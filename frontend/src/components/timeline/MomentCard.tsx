@@ -1,9 +1,13 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChatBubbleOvalLeftEllipsisIcon, HeartIcon, TrashIcon } from '@heroicons/react/24/outline'
+import {
+  EllipsisHorizontalIcon,
+  HeartIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { format } from 'date-fns'
 import { Moment } from '../../services/momentService'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 
@@ -11,16 +15,11 @@ interface MomentCardProps {
   moment: Moment
   currentUserAvatar: string
   onToggleLike: (momentId: string) => Promise<void>
-  onCreateComment: (
-    momentId: string,
-    content: string,
-    parentId?: string,
-    replyToName?: string
-  ) => Promise<void>
+  onRequestComment: (momentId: string, parentId?: string, replyToName?: string) => void
   onDelete: (momentId: string) => Promise<void>
   likeLoading: boolean
-  commentLoading: boolean
   deleteLoading: boolean
+  commentActive: boolean
 }
 
 interface GridImageProps {
@@ -35,13 +34,13 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
     return (
       <button
         type="button"
-        className="mt-2 block overflow-hidden rounded-md"
+        className="mt-3 block overflow-hidden rounded-sm"
         onClick={() => onPreview(0)}
       >
         <img
           src={resolveMediaUrl(images[0])}
           alt="动态图片"
-          className="max-h-72 w-auto max-w-[16rem] object-cover"
+          className="max-h-80 w-auto max-w-[17rem] object-cover"
         />
       </button>
     )
@@ -49,12 +48,12 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
 
   const useTwoCols = images.length === 2 || images.length === 4
   return (
-    <div className={`mt-2 grid gap-1 ${useTwoCols ? 'grid-cols-2 max-w-[13rem]' : 'grid-cols-3 max-w-[16.5rem]'}`}>
+    <div className={`mt-3 grid gap-1 ${useTwoCols ? 'grid-cols-2 max-w-[11.5rem]' : 'grid-cols-3 max-w-[17.5rem]'}`}>
       {images.map((image, index) => (
         <button
           key={`${image}-${index}`}
           type="button"
-          className="h-20 w-20 overflow-hidden bg-stone-100"
+          className="h-[92px] w-[92px] overflow-hidden bg-zinc-800"
           onClick={() => onPreview(index)}
         >
           <img
@@ -72,21 +71,25 @@ const MomentCard: React.FC<MomentCardProps> = ({
   moment,
   currentUserAvatar,
   onToggleLike,
-  onCreateComment,
+  onRequestComment,
   onDelete,
   likeLoading,
-  commentLoading,
   deleteLoading,
+  commentActive,
 }) => {
-  const [showCommentInput, setShowCommentInput] = useState(false)
-  const [commentText, setCommentText] = useState('')
-  const [replyTarget, setReplyTarget] = useState<{ parentId?: string; name?: string } | null>(null)
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [showActionMenu, setShowActionMenu] = useState(false)
+  const actionRef = useRef<HTMLDivElement>(null)
 
-  const relativeTime = useMemo(
-    () => formatDistanceToNow(new Date(moment.created_at), { addSuffix: true, locale: zhCN }),
-    [moment.created_at]
-  )
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (actionRef.current && !actionRef.current.contains(event.target as Node)) {
+        setShowActionMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   const authorAvatar = moment.author_name === '你'
     ? resolveMediaUrl(currentUserAvatar || '/user-avatar.svg')
@@ -94,157 +97,164 @@ const MomentCard: React.FC<MomentCardProps> = ({
       ? '/assistant-avatar.svg'
       : resolveMediaUrl(moment.author_avatar_url || '/user-avatar.svg')
 
-  const handleSubmitComment = async () => {
-    const content = commentText.trim()
-    if (!content) return
+  const formattedCreatedAt = useMemo(
+    () => format(new Date(moment.created_at), 'yyyy年M月d日 HH:mm'),
+    [moment.created_at]
+  )
 
-    await onCreateComment(moment.id, content, replyTarget?.parentId, replyTarget?.name)
-    setCommentText('')
-    setReplyTarget(null)
-    setShowCommentInput(false)
+  const getCommentAvatar = (name: string) => {
+    if (name === '你') return resolveMediaUrl(currentUserAvatar || '/user-avatar.svg')
+    if (name === 'AI陪伴助手') return '/assistant-avatar.svg'
+    return '/user-avatar.svg'
   }
 
   const handleDelete = async () => {
     const confirmed = window.confirm('确认删除这条朋友圈内容吗？删除后无法恢复。')
     if (!confirmed) return
     await onDelete(moment.id)
+    setShowActionMenu(false)
   }
 
   return (
-    <article className="fade-rise flex gap-3 border-b border-stone-200/70 px-4 py-4 md:px-6">
-      <img
-        src={authorAvatar}
-        alt={`${moment.author_name}头像`}
-        className="h-10 w-10 rounded-md object-cover ring-1 ring-stone-200"
-      />
+    <article className="border-b border-zinc-800 px-4 py-4 text-zinc-100 last:border-b-0">
+      <div className="flex items-start gap-3">
+        <img
+          src={authorAvatar}
+          alt={`${moment.author_name}头像`}
+          className="h-12 w-12 rounded-md object-cover"
+        />
 
-      <div className="min-w-0 flex-1">
-        <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[15px] font-semibold text-sky-800">{moment.author_name}</span>
-          {moment.location && (
-            <span className="text-xs text-stone-500">· {moment.location}</span>
+        <div className="min-w-0 flex-1">
+          <header className="flex items-center gap-2">
+            <span className="text-[19px] font-semibold text-sky-400">{moment.author_name}</span>
+            {moment.location && <span className="text-sm text-zinc-500">· {moment.location}</span>}
+          </header>
+
+          {moment.content && (
+            <p className="mt-0.5 whitespace-pre-wrap text-[17px] leading-8 text-zinc-100">{moment.content}</p>
           )}
-        </header>
 
-        {moment.content && (
-          <p className="mt-1 whitespace-pre-wrap text-[15px] leading-6 text-stone-900">{moment.content}</p>
-        )}
+          <MomentImageGrid images={moment.image_urls} onPreview={setPreviewIndex} />
 
-        <MomentImageGrid images={moment.image_urls} onPreview={setPreviewIndex} />
-
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
-            <span>{relativeTime}</span>
-            {moment.session_id && (
-              <>
-                <span>·</span>
-                <Link to={`/chat?sessionId=${moment.session_id}`} className="text-sky-700 hover:text-sky-800">
-                  查看原对话
-                </Link>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center overflow-hidden rounded border border-stone-200 bg-stone-100">
-            <button
-              type="button"
-              onClick={() => onToggleLike(moment.id)}
-              disabled={likeLoading}
-              className="inline-flex items-center gap-1 border-r border-stone-200 px-2.5 py-1 text-xs text-stone-700 hover:bg-stone-200 disabled:opacity-50"
-            >
-              {moment.liked_by_me ? (
-                <HeartSolidIcon className="h-4 w-4 text-rose-500" />
-              ) : (
-                <HeartIcon className="h-4 w-4" />
+          <div className="mt-3 flex items-center justify-between text-sm text-zinc-500">
+            <div className="flex items-center gap-2">
+              <span>{formattedCreatedAt}</span>
+              {moment.session_id && (
+                <>
+                  <span>·</span>
+                  <Link to={`/chat?sessionId=${moment.session_id}`} className="text-sky-400 hover:text-sky-300">
+                    原对话
+                  </Link>
+                </>
               )}
-              赞
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setReplyTarget(null)
-                setShowCommentInput((prev) => !prev)
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-stone-700 hover:bg-stone-200"
-            >
-              <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4" />
-              评论
-            </button>
-            {moment.author_name === '你' && (
+            </div>
+
+            <div ref={actionRef} className="relative">
               <button
                 type="button"
-                onClick={handleDelete}
-                disabled={deleteLoading}
-                className="inline-flex items-center gap-1 border-l border-stone-200 px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setShowActionMenu((prev) => !prev)}
+                className="rounded bg-zinc-800 p-1.5 text-zinc-300 hover:bg-zinc-700"
+                aria-label="更多操作"
               >
-                <TrashIcon className="h-4 w-4" />
-                删除
+                <EllipsisHorizontalIcon className="h-5 w-5" />
               </button>
-            )}
+
+              {showActionMenu && (
+                <div className="absolute right-0 top-10 z-30 flex overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/95 shadow-2xl">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onToggleLike(moment.id)
+                      setShowActionMenu(false)
+                    }}
+                    disabled={likeLoading}
+                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm text-zinc-100 hover:bg-zinc-700 disabled:opacity-50 ${
+                      moment.liked_by_me ? 'text-rose-400' : ''
+                    }`}
+                  >
+                    {moment.liked_by_me ? <HeartSolidIcon className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
+                    赞
+                  </button>
+                  <span className="my-2 w-px bg-zinc-700" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRequestComment(moment.id)
+                      setShowActionMenu(false)
+                    }}
+                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm hover:bg-zinc-700 ${
+                      commentActive ? 'text-sky-300' : 'text-zinc-100'
+                    }`}
+                  >
+                    <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5" />
+                    评论
+                  </button>
+                  {moment.author_name === '你' && (
+                    <>
+                      <span className="my-2 w-px bg-zinc-700" />
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={deleteLoading}
+                        className="inline-flex h-11 items-center gap-1.5 px-4 text-sm text-rose-400 hover:bg-zinc-700 disabled:opacity-50"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                        删除
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
+          {(moment.likes.length > 0 || moment.comments.length > 0) && (
+            <div className="mt-3 rounded bg-zinc-900 px-3 py-2">
+              {moment.likes.length > 0 && (
+                <div className={`flex items-start gap-2 text-sm text-zinc-200 ${moment.comments.length > 0 ? 'border-b border-zinc-700 pb-2' : ''}`}>
+                  <HeartIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                  <span className="leading-6">{moment.likes.join('，')}</span>
+                </div>
+              )}
+
+              {moment.comments.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  {moment.comments.map((comment) => (
+                    <button
+                      key={comment.id}
+                      type="button"
+                      className="flex w-full items-start gap-2 text-left"
+                      onClick={() => onRequestComment(moment.id, comment.parent_id || comment.id, comment.user_name)}
+                    >
+                      <img
+                        src={getCommentAvatar(comment.user_name)}
+                        alt={`${comment.user_name}头像`}
+                        className="h-8 w-8 rounded object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[15px] font-semibold text-sky-400">{comment.user_name}</span>
+                          <span className="shrink-0 text-xs text-zinc-500">
+                            {format(new Date(comment.created_at), 'yyyy年M月d日 HH:mm')}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-[15px] leading-6 text-zinc-200">
+                          {comment.reply_to_name ? `回复${comment.reply_to_name}：` : ''}
+                          {comment.content}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-
-        {(moment.likes.length > 0 || moment.comments.length > 0) && (
-          <div className="mt-2 space-y-1 rounded bg-stone-100 px-2.5 py-2 text-sm">
-            {moment.likes.length > 0 && (
-              <div className="flex items-start gap-1 text-sky-800">
-                <HeartSolidIcon className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
-                <span>{moment.likes.join('，')}</span>
-              </div>
-            )}
-
-            {moment.comments.map((comment) => (
-              <div key={comment.id} className="break-words leading-6">
-                <button
-                  type="button"
-                  className="font-medium text-sky-800 hover:underline"
-                  onClick={() => {
-                    setReplyTarget({
-                      parentId: comment.parent_id || comment.id,
-                      name: comment.user_name,
-                    })
-                    setShowCommentInput(true)
-                  }}
-                >
-                  {comment.user_name}
-                </button>
-                {comment.reply_to_name && (
-                  <span className="text-stone-500"> 回复 </span>
-                )}
-                {comment.reply_to_name && (
-                  <span className="font-medium text-sky-800">{comment.reply_to_name}</span>
-                )}
-                <span className="text-stone-600">: </span>
-                <span>{comment.content}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showCommentInput && (
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              value={commentText}
-              onChange={(event) => setCommentText(event.target.value)}
-              placeholder={replyTarget?.name ? `回复 ${replyTarget.name}` : '写评论...'}
-              className="min-w-0 flex-1 rounded border border-stone-200 bg-white px-2.5 py-1.5 text-sm focus:border-sky-400 focus:outline-none"
-              maxLength={1000}
-            />
-            <button
-              type="button"
-              onClick={handleSubmitComment}
-              disabled={commentLoading || !commentText.trim()}
-              className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              发送
-            </button>
-          </div>
-        )}
       </div>
 
-      {previewIndex !== null && (
+      {previewIndex !== null && moment.image_urls[previewIndex] && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 px-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-6"
           onClick={() => setPreviewIndex(null)}
         >
           <img
