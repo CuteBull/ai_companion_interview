@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.database import get_db
 from app.models.moment import Moment, MomentLike, MomentComment
 from app.schemas.moment import (
+    MomentAvatarBatchUpdateRequest,
+    MomentAvatarBatchUpdateResponse,
     MomentCommentCreateRequest,
     MomentCommentResponse,
     MomentCreateRequest,
@@ -122,6 +124,25 @@ def create_moment(payload: MomentCreateRequest, db: Session = Depends(get_db)):
     moment.likes = []
     moment.comments = []
     return _serialize_moment(moment)
+
+
+@router.patch("/avatar", response_model=MomentAvatarBatchUpdateResponse)
+def batch_update_avatar(payload: MomentAvatarBatchUpdateRequest, db: Session = Depends(get_db)):
+    user_name = _normalize_username(payload.user_name)
+    avatar_url = payload.author_avatar_url.strip()
+
+    updated_count = (
+        db.query(Moment)
+        .filter(Moment.author_name == user_name)
+        .update({Moment.author_avatar_url: avatar_url}, synchronize_session=False)
+    )
+    db.commit()
+
+    return MomentAvatarBatchUpdateResponse(
+        user_name=user_name,
+        author_avatar_url=avatar_url,
+        updated_count=updated_count,
+    )
 
 
 @router.post("/{moment_id}/likes/toggle", response_model=MomentLikeToggleResponse)

@@ -4,6 +4,7 @@ import { Moment } from '../../services/momentService'
 
 interface TimelineProps {
   moments: Moment[]
+  currentUserAvatar: string
   onToggleLike: (momentId: string) => Promise<void>
   onCreateComment: (
     momentId: string,
@@ -19,6 +20,7 @@ interface TimelineProps {
 
 const Timeline: React.FC<TimelineProps> = ({
   moments,
+  currentUserAvatar,
   onToggleLike,
   onCreateComment,
   onDeleteMoment,
@@ -41,6 +43,7 @@ const Timeline: React.FC<TimelineProps> = ({
         <MomentCard
           key={moment.id}
           moment={moment}
+          currentUserAvatar={currentUserAvatar}
           onToggleLike={onToggleLike}
           onCreateComment={onCreateComment}
           onDelete={onDeleteMoment}

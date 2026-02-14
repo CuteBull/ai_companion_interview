@@ -67,3 +67,14 @@ class MomentLikeToggleResponse(BaseModel):
 class MomentDeleteResponse(BaseModel):
     moment_id: str
     deleted: bool
+
+
+class MomentAvatarBatchUpdateRequest(BaseModel):
+    user_name: Optional[str] = Field(default="你", max_length=40)
+    author_avatar_url: str = Field(..., min_length=1, max_length=512)
+
+
+class MomentAvatarBatchUpdateResponse(BaseModel):
+    user_name: str
+    author_avatar_url: str
+    updated_count: int

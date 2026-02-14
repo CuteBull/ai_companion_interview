@@ -83,3 +83,14 @@ export const deleteMoment = async (
   })
   return response.data
 }
+
+export const updateMomentAvatarForUser = async (
+  authorAvatarUrl: string,
+  userName: string = '你'
+): Promise<{ user_name: string; author_avatar_url: string; updated_count: number }> => {
+  const response = await api.patch('/api/moments/avatar', {
+    user_name: userName,
+    author_avatar_url: authorAvatarUrl,
+  })
+  return response.data
+}

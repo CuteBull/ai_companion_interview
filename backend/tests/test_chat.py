@@ -273,6 +273,16 @@ def test_moments_workflow(test_db):
     assert refreshed["comment_count"] == 2
     assert len(refreshed["comments"]) == 2
 
+    avatar_update = client.patch(
+        "/api/moments/avatar",
+        json={"user_name": "你", "author_avatar_url": "/uploads/images/new-avatar.png"},
+    )
+    assert avatar_update.status_code == 200
+    assert avatar_update.json()["updated_count"] >= 1
+
+    refreshed_after_avatar = client.get("/api/moments").json()["moments"][0]
+    assert refreshed_after_avatar["author_avatar_url"] == "/uploads/images/new-avatar.png"
+
     forbidden_delete = client.delete(f"/api/moments/{moment_id}", params={"user_name": "别人"})
     assert forbidden_delete.status_code == 403
 

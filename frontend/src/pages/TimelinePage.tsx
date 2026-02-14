@@ -8,6 +8,7 @@ import {
   getMoments,
   Moment,
   toggleMomentLike,
+  updateMomentAvatarForUser,
 } from '../services/momentService'
 import {
   DEFAULT_AVATAR_URL,
@@ -53,10 +54,24 @@ const TimelinePage: React.FC = () => {
     }
   }, [])
 
-  const handleAvatarChange = (avatarUrl: string) => {
+  const handleAvatarChange = async (avatarUrl: string) => {
     const normalized = avatarUrl.trim() || DEFAULT_AVATAR_URL
     setSelectedAvatar(normalized)
     localStorage.setItem(TIMELINE_AVATAR_STORAGE_KEY, normalized)
+
+    setMoments((prev) =>
+      prev.map((item) =>
+        item.author_name === '你'
+          ? { ...item, author_avatar_url: normalized }
+          : item
+      )
+    )
+
+    try {
+      await updateMomentAvatarForUser(normalized, '你')
+    } catch (error) {
+      console.error('Update historical avatar failed:', error)
+    }
   }
 
   const handlePublish = async (payload: {
@@ -215,6 +230,7 @@ const TimelinePage: React.FC = () => {
         <>
           <Timeline
             moments={moments}
+            currentUserAvatar={selectedAvatar}
             onToggleLike={handleToggleLike}
             onCreateComment={handleCreateComment}
             onDeleteMoment={handleDeleteMoment}

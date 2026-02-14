@@ -7,7 +7,7 @@ import { DEFAULT_AVATAR_URL } from '../../constants/avatarOptions'
 interface MomentPublisherProps {
   publishing: boolean
   selectedAvatar: string
-  onAvatarChange: (avatarUrl: string) => void
+  onAvatarChange: (avatarUrl: string) => void | Promise<void>
   onPublish: (payload: {
     content: string
     image_urls: string[]
@@ -71,7 +71,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
     setAvatarUploading(true)
     try {
       const result = await uploadFile(file)
-      onAvatarChange(result.url as string)
+      await onAvatarChange(result.url as string)
     } catch (error) {
       console.error('Upload avatar failed:', error)
       alert('头像上传失败，请稍后再试')

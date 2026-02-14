@@ -9,6 +9,7 @@ import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 interface MomentCardProps {
   moment: Moment
+  currentUserAvatar: string
   onToggleLike: (momentId: string) => Promise<void>
   onCreateComment: (
     momentId: string,
@@ -69,6 +70,7 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
 
 const MomentCard: React.FC<MomentCardProps> = ({
   moment,
+  currentUserAvatar,
   onToggleLike,
   onCreateComment,
   onDelete,
@@ -86,11 +88,11 @@ const MomentCard: React.FC<MomentCardProps> = ({
     [moment.created_at]
   )
 
-  const authorAvatar = moment.author_avatar_url
-    ? resolveMediaUrl(moment.author_avatar_url)
+  const authorAvatar = moment.author_name === '你'
+    ? resolveMediaUrl(currentUserAvatar || '/user-avatar.svg')
     : moment.author_name === 'AI陪伴助手'
       ? '/assistant-avatar.svg'
-      : '/user-avatar.svg'
+      : resolveMediaUrl(moment.author_avatar_url || '/user-avatar.svg')
 
   const handleSubmitComment = async () => {
     const content = commentText.trim()
