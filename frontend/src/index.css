@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --ink: #1f2937;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-stone-200;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    color: var(--ink);
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background:
+      radial-gradient(circle at 8% 5%, rgba(20, 184, 166, 0.14), transparent 34%),
+      radial-gradient(circle at 92% 0%, rgba(251, 146, 60, 0.18), transparent 28%),
+      linear-gradient(160deg, #f8f4ed 0%, #fbf8f3 38%, #f2efe8 100%);
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    left: -120px;
+    top: 52vh;
+    width: 360px;
+    height: 360px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.23), rgba(245, 158, 11, 0));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    right: -120px;
+    top: 28vh;
+    width: 360px;
+    height: 360px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(15, 118, 110, 0.2), rgba(15, 118, 110, 0));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    letter-spacing: 0.01em;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-orange-900/10 backdrop-blur-md;
+  }
+
+  .panel-muted {
+    @apply rounded-2xl border border-teal-100/70 bg-teal-50/60;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-stone-300 bg-white/80 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .glass-top {
+    @apply rounded-2xl border border-white/70 bg-white/70 backdrop-blur-md shadow-lg shadow-orange-900/10;
+  }
+
+  .fade-rise {
+    animation: fade-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-rise {
+    animation: none;
+  }
+}

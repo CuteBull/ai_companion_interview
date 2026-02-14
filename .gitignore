@@ -38,6 +38,12 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 
+# Local databases and uploads
+*.db
+*.sqlite
+backend/uploads/
+uploads/
+
 # IDE
 .vscode/
 .idea/

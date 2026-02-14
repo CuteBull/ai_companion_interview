@@ -10,3 +10,6 @@
 ## 快速开始
 1. 前端: `cd frontend && npm install && npm run dev`
 2. 后端: `cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload`
+
+## 免费部署
+- 详见 `DEPLOY_FREE.md`（已包含 GitHub 自动化部署工作流）
