@@ -14,6 +14,7 @@ const ChatPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [sessionError, setSessionError] = useState<string>()
+  const [chatResetVersion, setChatResetVersion] = useState(0)
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -46,7 +47,7 @@ const ChatPage: React.FC = () => {
     }
   }, [showHistory, fetchSessions])
 
-  const updateSessionInUrl = (nextSessionId?: string, replace: boolean = false) => {
+  const updateSessionInUrl = useCallback((nextSessionId?: string, replace: boolean = false) => {
     const params = new URLSearchParams(location.search)
     if (nextSessionId) {
       params.set('sessionId', nextSessionId)
@@ -62,19 +63,22 @@ const ChatPage: React.FC = () => {
       },
       { replace }
     )
-  }
+  }, [location.search, navigate])
 
   const handleOpenNewChat = () => {
-    updateSessionInUrl(undefined)
+    setSessionId(undefined)
+    setChatResetVersion((prev) => prev + 1)
+    updateSessionInUrl(undefined, true)
     setShowHistory(false)
   }
 
   const handleSelectSession = (targetId: string) => {
+    setSessionId(targetId)
     updateSessionInUrl(targetId)
     setShowHistory(false)
   }
 
-  const handleSessionChange = (nextSessionId: string | undefined) => {
+  const handleSessionChange = useCallback((nextSessionId: string | undefined) => {
     if (!nextSessionId) return
 
     const currentSessionId = new URLSearchParams(location.search).get('sessionId') || undefined
@@ -82,7 +86,7 @@ const ChatPage: React.FC = () => {
 
     updateSessionInUrl(nextSessionId, true)
     setSessionId(nextSessionId)
-  }
+  }, [location.search, updateSessionInUrl])
 
   const formatSessionTime = (value: string) => {
     const date = new Date(value)
@@ -120,7 +124,11 @@ const ChatPage: React.FC = () => {
           </div>
         </div>
 
-        <ChatInterface sessionId={sessionId} onSessionChange={handleSessionChange} />
+        <ChatInterface
+          key={`${sessionId ?? 'new'}-${chatResetVersion}`}
+          sessionId={sessionId}
+          onSessionChange={handleSessionChange}
+        />
       </div>
 
       {showHistory && (
