@@ -7,6 +7,7 @@ import { DEFAULT_AVATAR_URL } from '../../constants/avatarOptions'
 interface MomentPublisherProps {
   publishing: boolean
   selectedAvatar: string
+  isDarkMode: boolean
   onAvatarChange: (avatarUrl: string) => void | Promise<void>
   onPublish: (payload: {
     content: string
@@ -61,6 +62,7 @@ const CITY_OPTIONS = [
 const MomentPublisher: React.FC<MomentPublisherProps> = ({
   publishing,
   selectedAvatar,
+  isDarkMode,
   onAvatarChange,
   onPublish,
 }) => {
@@ -150,12 +152,18 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
   const disabled = publishing || uploading || (!content.trim() && imageUrls.length === 0)
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4">
+    <div className={`rounded-2xl border p-4 shadow-xl ${
+      isDarkMode
+        ? 'border-zinc-800 bg-zinc-900/75 shadow-black/25'
+        : 'border-stone-200 bg-white/88 shadow-stone-300/25 backdrop-blur-sm'
+    }`}>
       <div className="flex items-start gap-3">
         <img
           src={resolveMediaUrl(selectedAvatar)}
           alt="用户头像"
-          className="h-11 w-11 rounded-md object-cover"
+          className={`h-11 w-11 rounded-xl object-cover ring-1 ${
+            isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+          }`}
           loading="lazy"
           decoding="async"
         />
@@ -166,24 +174,30 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
             onChange={(event) => setContent(event.target.value)}
             rows={2}
             placeholder="这一刻的想法..."
-            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-base text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+            className={`w-full resize-none rounded-xl border px-3 py-2.5 text-base focus:outline-none ${
+              isDarkMode
+                ? 'border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500'
+                : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-teal-500'
+            }`}
             disabled={publishing}
           />
 
           {imageUrls.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {imageUrls.map((url, index) => (
-                <div key={`${url}-${index}`} className="relative overflow-hidden rounded">
+                <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg">
                   <img
                     src={resolveMediaUrl(url)}
                     alt={`已选图片 ${index + 1}`}
-                    className="h-24 w-full object-cover"
+                    className={`h-24 w-full object-cover ring-1 ${
+                      isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+                    }`}
                     loading="lazy"
                     decoding="async"
                   />
                   <button
                     type="button"
-                    className="absolute right-1 top-1 rounded bg-black/55 px-1 text-xs text-white"
+                    className="absolute right-1 top-1 rounded-md bg-black/60 px-1.5 text-xs text-white"
                     onClick={() => setImageUrls((prev) => prev.filter((_, idx) => idx !== index))}
                     aria-label="移除图片"
                   >
@@ -195,12 +209,16 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-zinc-400">头像</span>
+            <span className={`text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>头像</span>
             <button
               type="button"
               onClick={handlePickAvatar}
               disabled={publishing || avatarUploading}
-              className="inline-flex items-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`inline-flex items-center rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
             >
               {avatarUploading ? '上传中...' : '从本地选择头像'}
             </button>
@@ -208,7 +226,11 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={() => onAvatarChange(DEFAULT_AVATAR_URL)}
               disabled={publishing || avatarUploading}
-              className="inline-flex items-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`inline-flex items-center rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
             >
               恢复默认
             </button>
@@ -227,7 +249,11 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 type="button"
                 onClick={handlePickImages}
                 disabled={uploading || remainCount <= 0 || publishing}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                  isDarkMode
+                    ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                }`}
               >
                 <PhotoIcon className="h-4 w-4" />
                 {uploading ? '上传中...' : `图片 (${imageUrls.length}/${MAX_IMAGES})`}
@@ -245,7 +271,11 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               <select
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
-                className="min-w-[150px] rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 focus:border-zinc-500 focus:outline-none"
+                className={`min-w-[150px] rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none ${
+                  isDarkMode
+                    ? 'border-zinc-700 bg-zinc-900 text-zinc-200 focus:border-zinc-500'
+                    : 'border-stone-300 bg-white text-stone-700 focus:border-teal-500'
+                }`}
                 disabled={publishing}
                 aria-label="选择所在位置"
               >
@@ -262,7 +292,11 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={handlePublish}
               disabled={disabled}
-              className="rounded-lg bg-zinc-100 px-4 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDarkMode
+                  ? 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                  : 'bg-teal-700 text-white hover:bg-teal-800'
+              }`}
             >
               {publishing ? '发布中...' : '发表'}
             </button>

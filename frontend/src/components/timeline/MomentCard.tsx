@@ -15,6 +15,7 @@ import { parseMomentCommentContent } from '../../utils/commentMedia'
 interface MomentCardProps {
   moment: Moment
   currentUserAvatar: string
+  isDarkMode: boolean
   onToggleLike: (momentId: string) => Promise<void>
   onRequestComment: (momentId: string, parentId?: string, replyToName?: string) => void
   onDelete: (momentId: string) => Promise<void>
@@ -25,10 +26,11 @@ interface MomentCardProps {
 
 interface GridImageProps {
   images: string[]
+  isDarkMode: boolean
   onPreview: (index: number) => void
 }
 
-const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
+const MomentImageGrid: React.FC<GridImageProps> = ({ images, isDarkMode, onPreview }) => {
   const [failedIndexes, setFailedIndexes] = useState<number[]>([])
 
   useEffect(() => {
@@ -46,7 +48,7 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
     return (
       <button
         type="button"
-        className="mt-3 block overflow-hidden rounded-sm"
+        className="mt-3 block overflow-hidden rounded-xl"
         onClick={() => onPreview(item.index)}
       >
         <img
@@ -70,7 +72,9 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
         <button
           key={`${image}-${index}`}
           type="button"
-          className="h-[92px] w-[92px] overflow-hidden bg-zinc-800"
+          className={`h-[92px] w-[92px] overflow-hidden rounded-md ${
+            isDarkMode ? 'bg-zinc-800' : 'bg-stone-200'
+          }`}
           onClick={() => onPreview(index)}
         >
           <img
@@ -92,6 +96,7 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
 const MomentCard: React.FC<MomentCardProps> = ({
   moment,
   currentUserAvatar,
+  isDarkMode,
   onToggleLike,
   onRequestComment,
   onDelete,
@@ -138,35 +143,43 @@ const MomentCard: React.FC<MomentCardProps> = ({
   }
 
   return (
-    <article className="border-b border-zinc-800 px-4 py-4 text-zinc-100 last:border-b-0">
+    <article className={`border-b px-4 py-4 last:border-b-0 ${
+      isDarkMode ? 'border-zinc-800 text-zinc-100' : 'border-stone-200 text-stone-900'
+    }`}>
       <div className="flex items-start gap-3">
         <img
           src={authorAvatar}
           alt={`${moment.author_name}头像`}
-          className="h-12 w-12 rounded-md object-cover"
+          className={`h-12 w-12 rounded-xl object-cover ring-1 ${
+            isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+          }`}
           loading="lazy"
           decoding="async"
         />
 
         <div className="min-w-0 flex-1">
           <header className="flex items-center gap-2">
-            <span className="text-[19px] font-semibold text-sky-400">{moment.author_name}</span>
-            {moment.location && <span className="text-sm text-zinc-500">· {moment.location}</span>}
+            <span className={`text-[19px] font-semibold ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>{moment.author_name}</span>
+            {moment.location && <span className={`text-sm ${isDarkMode ? 'text-zinc-500' : 'text-stone-500'}`}>· {moment.location}</span>}
           </header>
 
           {moment.content && (
-            <p className="mt-0.5 whitespace-pre-wrap text-[17px] leading-8 text-zinc-100">{moment.content}</p>
+            <p className={`mt-1 whitespace-pre-wrap text-[17px] leading-8 ${
+              isDarkMode ? 'text-zinc-100' : 'text-stone-900'
+            }`}>{moment.content}</p>
           )}
 
-          <MomentImageGrid images={moment.image_urls} onPreview={setPreviewIndex} />
+          <MomentImageGrid images={moment.image_urls} isDarkMode={isDarkMode} onPreview={setPreviewIndex} />
 
-          <div className="mt-3 flex items-center justify-between text-sm text-zinc-500">
+          <div className={`mt-3 flex items-center justify-between text-sm ${
+            isDarkMode ? 'text-zinc-500' : 'text-stone-500'
+          }`}>
             <div className="flex items-center gap-2">
               <span>{formattedCreatedAt}</span>
               {moment.session_id && (
                 <>
                   <span>·</span>
-                  <Link to={`/chat?sessionId=${moment.session_id}`} className="text-sky-400 hover:text-sky-300">
+                  <Link to={`/chat?sessionId=${moment.session_id}`} className={isDarkMode ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-500'}>
                     原对话
                   </Link>
                 </>
@@ -177,14 +190,22 @@ const MomentCard: React.FC<MomentCardProps> = ({
               <button
                 type="button"
                 onClick={() => setShowActionMenu((prev) => !prev)}
-                className="rounded bg-zinc-800 p-1.5 text-zinc-300 hover:bg-zinc-700"
+                className={`rounded-lg p-1.5 ${
+                  isDarkMode
+                    ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
                 aria-label="更多操作"
               >
                 <EllipsisHorizontalIcon className="h-5 w-5" />
               </button>
 
               {showActionMenu && (
-                <div className="absolute bottom-12 right-0 z-50 flex overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/95 shadow-2xl">
+                <div className={`absolute bottom-12 right-0 z-50 flex overflow-hidden rounded-lg border shadow-2xl ${
+                  isDarkMode
+                    ? 'border-zinc-700 bg-zinc-800/95'
+                    : 'border-stone-300 bg-white/95'
+                }`}>
                   <button
                     type="button"
                     onClick={async () => {
@@ -192,22 +213,24 @@ const MomentCard: React.FC<MomentCardProps> = ({
                       setShowActionMenu(false)
                     }}
                     disabled={likeLoading}
-                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm text-zinc-100 hover:bg-zinc-700 disabled:opacity-50 ${
-                      moment.liked_by_me ? 'text-rose-400' : ''
-                    }`}
+                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm disabled:opacity-50 ${
+                      isDarkMode ? 'text-zinc-100 hover:bg-zinc-700' : 'text-stone-800 hover:bg-stone-100'
+                    } ${moment.liked_by_me ? 'text-rose-400' : ''}`}
                   >
                     {moment.liked_by_me ? <HeartSolidIcon className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
                     赞
                   </button>
-                  <span className="my-2 w-px bg-zinc-700" />
+                  <span className={`my-2 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
                   <button
                     type="button"
                     onClick={() => {
                       onRequestComment(moment.id)
                       setShowActionMenu(false)
                     }}
-                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm hover:bg-zinc-700 ${
-                      commentActive ? 'text-sky-300' : 'text-zinc-100'
+                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm ${
+                      isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-stone-100'
+                    } ${
+                      commentActive ? (isDarkMode ? 'text-sky-300' : 'text-sky-600') : (isDarkMode ? 'text-zinc-100' : 'text-stone-800')
                     }`}
                   >
                     <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5" />
@@ -215,12 +238,14 @@ const MomentCard: React.FC<MomentCardProps> = ({
                   </button>
                   {moment.author_name === '你' && (
                     <>
-                      <span className="my-2 w-px bg-zinc-700" />
+                      <span className={`my-2 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
                       <button
                         type="button"
                         onClick={handleDelete}
                         disabled={deleteLoading}
-                        className="inline-flex h-11 items-center gap-1.5 px-4 text-sm text-rose-400 hover:bg-zinc-700 disabled:opacity-50"
+                        className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm text-rose-400 disabled:opacity-50 ${
+                          isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-rose-50'
+                        }`}
                       >
                         <TrashIcon className="h-5 w-5" />
                         删除
@@ -233,10 +258,18 @@ const MomentCard: React.FC<MomentCardProps> = ({
           </div>
 
           {(moment.likes.length > 0 || moment.comments.length > 0) && (
-            <div className="mt-3 rounded bg-zinc-900 px-3 py-2">
+            <div className={`mt-3 rounded-xl px-3 py-2 ${
+              isDarkMode ? 'bg-zinc-900/90' : 'bg-stone-100/85'
+            }`}>
               {moment.likes.length > 0 && (
-                <div className={`flex items-start gap-2 text-sm text-zinc-200 ${moment.comments.length > 0 ? 'border-b border-zinc-700 pb-2' : ''}`}>
-                  <HeartIcon className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                <div className={`flex items-start gap-2 text-sm ${
+                  isDarkMode ? 'text-zinc-200' : 'text-stone-700'
+                } ${
+                  moment.comments.length > 0
+                    ? (isDarkMode ? 'border-b border-zinc-700 pb-2' : 'border-b border-stone-300 pb-2')
+                    : ''
+                }`}>
+                  <HeartIcon className={`mt-0.5 h-4 w-4 shrink-0 ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} />
                   <span className="leading-6">{moment.likes.join('，')}</span>
                 </div>
               )}
@@ -247,20 +280,24 @@ const MomentCard: React.FC<MomentCardProps> = ({
                     <button
                       key={comment.id}
                       type="button"
-                      className="flex w-full items-start gap-2 text-left"
+                      className={`flex w-full items-start gap-2 rounded-lg p-1 text-left ${
+                        isDarkMode ? 'hover:bg-zinc-800/45' : 'hover:bg-white/70'
+                      }`}
                       onClick={() => onRequestComment(moment.id, comment.parent_id || comment.id, comment.user_name)}
                     >
                       <img
                         src={getCommentAvatar(comment.user_name)}
                         alt={`${comment.user_name}头像`}
-                        className="h-8 w-8 rounded object-cover"
+                        className={`h-8 w-8 rounded-md object-cover ring-1 ${
+                          isDarkMode ? 'ring-zinc-700/70' : 'ring-stone-200'
+                        }`}
                         loading="lazy"
                         decoding="async"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-[15px] font-semibold text-sky-400">{comment.user_name}</span>
-                          <span className="shrink-0 text-xs text-zinc-500">
+                          <span className={`text-[15px] font-semibold ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>{comment.user_name}</span>
+                          <span className={`shrink-0 text-xs ${isDarkMode ? 'text-zinc-500' : 'text-stone-500'}`}>
                             {format(new Date(comment.created_at), 'yyyy年M月d日 HH:mm')}
                           </span>
                         </div>
@@ -270,7 +307,9 @@ const MomentCard: React.FC<MomentCardProps> = ({
                           return (
                             <>
                               {hasText && (
-                                <p className="whitespace-pre-wrap text-[15px] leading-6 text-zinc-200">
+                                <p className={`whitespace-pre-wrap text-[15px] leading-6 ${
+                                  isDarkMode ? 'text-zinc-200' : 'text-stone-700'
+                                }`}>
                                   {comment.reply_to_name ? `回复${comment.reply_to_name}：` : ''}
                                   {parsed.text}
                                 </p>
@@ -283,7 +322,9 @@ const MomentCard: React.FC<MomentCardProps> = ({
                                       key={`${comment.id}-${url}-${imageIndex}`}
                                       src={resolveMediaUrl(url)}
                                       alt="评论图片"
-                                      className="h-20 w-20 cursor-zoom-in rounded-sm object-cover"
+                                      className={`h-20 w-20 cursor-zoom-in rounded-md object-cover ring-1 ${
+                                        isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+                                      }`}
                                       loading="lazy"
                                       decoding="async"
                                       onError={(event) => {

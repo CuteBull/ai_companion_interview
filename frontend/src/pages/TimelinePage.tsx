@@ -345,45 +345,59 @@ const TimelinePage: React.FC = () => {
         </div>
       </header>
 
-      <main className="space-y-4 px-4 pb-24 pt-4">
+      <main className="space-y-5 px-4 pb-24 pt-4">
         {showPublisher && (
           <MomentPublisher
             publishing={publishing}
             selectedAvatar={selectedAvatar}
+            isDarkMode={isDarkMode}
             onAvatarChange={handleAvatarChange}
             onPublish={handlePublish}
           />
         )}
 
         {!showPublisher && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-3 py-2.5">
+          <div className={`rounded-2xl border px-3 py-2.5 shadow-sm ${
+            isDarkMode
+              ? 'border-zinc-800 bg-zinc-900/70'
+              : 'border-stone-200 bg-white/88 shadow-stone-300/30 backdrop-blur-sm'
+          }`}>
             <button
               type="button"
               onClick={() => setShowPublisher(true)}
-              className="flex w-full items-center justify-between rounded-lg bg-zinc-800 px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700"
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm ${
+                isDarkMode
+                  ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+              }`}
             >
               <span className="inline-flex items-center gap-2">
                 <img
                   src={resolveMediaUrl(selectedAvatar)}
                   alt="你的头像"
-                  className="h-8 w-8 rounded-md object-cover"
+                  className={`h-8 w-8 rounded-lg object-cover ring-1 ${
+                    isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+                  }`}
                 />
                 发朋友圈
               </span>
-              <span className="text-zinc-400">写这一刻</span>
+              <span className={isDarkMode ? 'text-zinc-400' : 'text-stone-500'}>写这一刻</span>
             </button>
           </div>
         )}
 
         {loading && moments.length === 0 ? (
           <div className="flex justify-center py-14">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-200" />
+            <div className={`h-10 w-10 animate-spin rounded-full border-2 ${
+              isDarkMode ? 'border-zinc-700 border-t-zinc-200' : 'border-stone-300 border-t-teal-600'
+            }`} />
           </div>
         ) : (
           <>
             <Timeline
               moments={moments}
               currentUserAvatar={selectedAvatar}
+              isDarkMode={isDarkMode}
               onToggleLike={handleToggleLike}
               onRequestComment={handleRequestComment}
               onDeleteMoment={handleDeleteMoment}
@@ -397,7 +411,11 @@ const TimelinePage: React.FC = () => {
                 <button
                   onClick={handleLoadMore}
                   disabled={loading}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-6 py-2 text-sm text-zinc-200 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`rounded-xl border px-6 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                    isDarkMode
+                      ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                      : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100'
+                  }`}
                 >
                   {loading ? '加载中...' : '加载更多'}
                 </button>
@@ -427,18 +445,24 @@ const TimelinePage: React.FC = () => {
           )}
 
           {commentImageUrl && (
-            <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1">
+            <div className={`mb-2 inline-flex items-center gap-2 rounded-lg border px-2 py-1 ${
+              isDarkMode ? 'border-zinc-700 bg-zinc-900' : 'border-stone-300 bg-white'
+            }`}>
               <img
                 src={resolveMediaUrl(commentImageUrl)}
                 alt="评论图片预览"
-                className="h-10 w-10 rounded object-cover"
+                className={`h-10 w-10 rounded-md object-cover ring-1 ${
+                  isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+                }`}
                 loading="lazy"
                 decoding="async"
               />
               <button
                 type="button"
                 onClick={() => setCommentImageUrl(null)}
-                className="text-xs text-zinc-400 hover:text-zinc-200"
+                className={`text-xs ${
+                  isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-stone-500 hover:text-stone-700'
+                }`}
               >
                 移除
               </button>
