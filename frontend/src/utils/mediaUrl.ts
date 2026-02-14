@@ -22,12 +22,17 @@ export const resolveMediaUrl = (rawUrl?: string | null): string => {
     return url
   }
 
-  if (!API_BASE_URL) {
+  if (url.startsWith('/')) {
+    // 前端静态资源（如 /avatar-*.svg）保持原路径；
+    // 仅后端本地上传目录需要拼接API域名。
+    if (url.startsWith('/uploads/') && API_BASE_URL) {
+      return `${API_BASE_URL}${url}`
+    }
     return url
   }
 
-  if (url.startsWith('/')) {
-    return `${API_BASE_URL}${url}`
+  if (!API_BASE_URL) {
+    return url
   }
 
   return `${API_BASE_URL}/${url}`
