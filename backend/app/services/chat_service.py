@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.session import Session as SessionModel
 from app.models.message import Message as MessageModel
+from app.models.moment import Moment as MomentModel
 from app.services.openai_service import openai_service
 from app.utils.token_counter import token_counter
 
@@ -111,7 +112,7 @@ class ChatService:
         return truncated_history
 
     def get_sessions(self, page: int = 1, limit: int = 20):
-        """获取会话列表"""
+        """获取对话列表"""
         offset = (page - 1) * limit
         sessions = self.db.query(SessionModel).order_by(
             SessionModel.updated_at.desc()
@@ -123,7 +124,7 @@ class ChatService:
             "sessions": [
                 {
                     "id": session.id,
-                    "title": session.title or f"会话 {session.id[:8]}",
+                    "title": session.title or f"对话 {session.id[:8]}",
                     "created_at": session.created_at.isoformat(),
                     "message_count": len(session.messages),
                     "preview_image": self._get_session_preview(session)
@@ -135,6 +136,39 @@ class ChatService:
             "limit": limit
         }
 
+    def clear_sessions(self) -> Dict[str, int]:
+        """清空全部对话，并解除朋友圈对话关联。"""
+        sessions = self.db.query(SessionModel).all()
+        if not sessions:
+            return {
+                "deleted_sessions": 0,
+                "deleted_messages": 0,
+                "detached_moments": 0,
+            }
+
+        session_ids = [session.id for session in sessions]
+        deleted_messages = self.db.query(MessageModel).filter(
+            MessageModel.session_id.in_(session_ids)
+        ).count()
+
+        try:
+            detached_moments = self.db.query(MomentModel).filter(
+                MomentModel.session_id.in_(session_ids)
+            ).update({MomentModel.session_id: None}, synchronize_session=False)
+
+            for session in sessions:
+                self.db.delete(session)
+
+            self.db.commit()
+            return {
+                "deleted_sessions": len(session_ids),
+                "deleted_messages": deleted_messages,
+                "detached_moments": detached_moments,
+            }
+        except Exception:
+            self.db.rollback()
+            raise
+
     def _get_session_preview(self, session: SessionModel) -> Optional[str]:
         """获取会话预览图"""
         for message in session.messages:
@@ -143,8 +177,8 @@ class ChatService:
         return None
 
     def _generate_title(self, content: str, max_length: int = 40) -> str:
-        """基于首条用户消息生成会话标题"""
+        """基于首条用户消息生成对话标题"""
         normalized = " ".join(content.strip().split())
         if not normalized:
-            return "新会话"
+            return "新对话"
         return normalized[:max_length]

@@ -10,7 +10,7 @@ const SessionDetailPage: React.FC = () => {
   const { theme } = useTheme()
   const isDarkMode = theme === 'dark'
   const { sessionId } = useParams<{ sessionId: string }>()
-  const [title, setTitle] = useState('会话详情')
+  const [title, setTitle] = useState('对话详情')
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>()
@@ -24,7 +24,7 @@ const SessionDetailPage: React.FC = () => {
 
       try {
         const sessionData = await getSessionMessages(sessionId)
-        setTitle(sessionData.session.title || '未命名会话')
+        setTitle(sessionData.session.title || '未命名对话')
         setMessages(sessionData.messages)
       } catch (err) {
         console.error('Failed to load session detail:', err)
@@ -77,7 +77,7 @@ const SessionDetailPage: React.FC = () => {
           ) : error ? (
             <div className="text-center py-12 text-rose-500">{error}</div>
           ) : messages.length === 0 ? (
-            <div className={`panel-muted text-center py-12 ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>该会话暂无消息</div>
+            <div className={`panel-muted text-center py-12 ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>该对话暂无消息</div>
           ) : (
             <MessageList messages={messages} />
           )}

@@ -25,6 +25,12 @@ export interface SessionsResponse {
   limit: number
 }
 
+export interface ClearSessionsResponse {
+  deleted_sessions: number
+  deleted_messages: number
+  detached_moments: number
+}
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -146,5 +152,11 @@ export const getSessions = async (page: number = 1, limit: number = 20): Promise
 // 获取会话消息
 export const getSessionMessages = async (sessionId: string): Promise<SessionMessages> => {
   const response = await api.get(`/api/sessions/${sessionId}/messages`)
+  return response.data
+}
+
+// 清空历史对话
+export const clearSessions = async (): Promise<ClearSessionsResponse> => {
+  const response = await api.delete('/api/sessions')
   return response.data
 }

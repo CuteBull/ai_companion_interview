@@ -52,7 +52,7 @@ describe('ChatInterface', () => {
     vi.mocked(getSessionMessages).mockResolvedValueOnce({
       session: {
         id: 'history-session',
-        title: '历史会话',
+        title: '历史对话',
       },
       messages: [
         {

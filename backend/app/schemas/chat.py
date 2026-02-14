@@ -23,3 +23,9 @@ class SessionsResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class ClearSessionsResponse(BaseModel):
+    deleted_sessions: int
+    deleted_messages: int
+    detached_moments: int

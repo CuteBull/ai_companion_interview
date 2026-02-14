@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ClockIcon, PlusIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, PlusIcon, ArrowPathIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import ChatInterface from '../components/chat/ChatInterface'
-import { Session, getSessions } from '../services/chatService'
+import { Session, clearSessions, getSessions } from '../services/chatService'
 import { useTheme } from '../contexts/ThemeContext'
 
 const ChatPage: React.FC = () => {
@@ -16,6 +16,7 @@ const ChatPage: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false)
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
+  const [clearingHistory, setClearingHistory] = useState(false)
   const [sessionError, setSessionError] = useState<string>()
   const [chatResetVersion, setChatResetVersion] = useState(0)
 
@@ -38,7 +39,7 @@ const ChatPage: React.FC = () => {
       setSessions(response.sessions)
     } catch (error) {
       console.error('Failed to load sessions:', error)
-      setSessionError('历史会话加载失败，请稍后重试')
+      setSessionError('历史对话加载失败，请稍后重试')
     } finally {
       setLoadingSessions(false)
     }
@@ -91,6 +92,29 @@ const ChatPage: React.FC = () => {
     setSessionId(nextSessionId)
   }, [location.search, updateSessionInUrl])
 
+  const handleClearHistory = useCallback(async () => {
+    if (loadingSessions || clearingHistory) return
+
+    const confirmed = window.confirm('确认清空全部历史对话吗？该操作不可撤销。')
+    if (!confirmed) return
+
+    setClearingHistory(true)
+    setSessionError(undefined)
+
+    try {
+      await clearSessions()
+      setSessions([])
+      setSessionId(undefined)
+      setChatResetVersion((prev) => prev + 1)
+      updateSessionInUrl(undefined, true)
+    } catch (error) {
+      console.error('Failed to clear sessions:', error)
+      setSessionError('清空历史对话失败，请稍后重试')
+    } finally {
+      setClearingHistory(false)
+    }
+  }, [clearingHistory, loadingSessions, updateSessionInUrl])
+
   const formatSessionTime = (value: string) => {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
@@ -103,8 +127,8 @@ const ChatPage: React.FC = () => {
         <div className="flex items-center justify-between px-1">
           <div className={`text-sm ${isDarkMode ? 'text-zinc-300' : 'text-stone-600'}`}>
             {selectedSession
-              ? `当前会话：${selectedSession.title || selectedSession.id.slice(0, 8)}`
-              : '当前会话：新对话'}
+              ? `当前对话：${selectedSession.title || selectedSession.id.slice(0, 8)}`
+              : '当前对话：新对话'}
           </div>
 
           <div className="flex items-center gap-2">
@@ -130,7 +154,7 @@ const ChatPage: React.FC = () => {
               }`}
             >
               <ClockIcon className="h-4 w-4" />
-              历史记录
+              历史对话
             </button>
           </div>
         </div>
@@ -156,15 +180,31 @@ const ChatPage: React.FC = () => {
             <div className={`flex items-center justify-between border-b px-4 py-3 ${
               isDarkMode ? 'border-zinc-700' : 'border-stone-200'
             }`}>
-              <h2 className={`text-base font-semibold ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>历史会话</h2>
+              <h2 className={`text-base font-semibold ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>历史对话</h2>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  onClick={handleClearHistory}
+                  disabled={loadingSessions || clearingHistory || sessions.length === 0}
+                  className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs ${
+                    isDarkMode
+                      ? 'text-rose-300 hover:bg-rose-900/35 disabled:text-zinc-600 disabled:hover:bg-transparent'
+                      : 'text-rose-600 hover:bg-rose-50 disabled:text-stone-400 disabled:hover:bg-transparent'
+                  }`}
+                  aria-label="清空历史对话"
+                  title="清空历史对话"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  {clearingHistory ? '清空中' : '清空'}
+                </button>
+                <button
+                  type="button"
                   onClick={fetchSessions}
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded ${
+                  disabled={clearingHistory}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded disabled:opacity-50 ${
                     isDarkMode ? 'text-zinc-400 hover:bg-zinc-800' : 'text-stone-500 hover:bg-stone-100'
                   }`}
-                  aria-label="刷新历史会话"
+                  aria-label="刷新历史对话"
                 >
                   <ArrowPathIcon className="h-5 w-5" />
                 </button>
@@ -174,7 +214,7 @@ const ChatPage: React.FC = () => {
                   className={`inline-flex h-8 w-8 items-center justify-center rounded ${
                     isDarkMode ? 'text-zinc-400 hover:bg-zinc-800' : 'text-stone-500 hover:bg-stone-100'
                   }`}
-                  aria-label="关闭历史会话"
+                  aria-label="关闭历史对话"
                 >
                   <XMarkIcon className="h-5 w-5" />
                 </button>
@@ -205,7 +245,7 @@ const ChatPage: React.FC = () => {
               ) : sessionError ? (
                 <div className="py-10 text-center text-sm text-rose-500">{sessionError}</div>
               ) : sessions.length === 0 ? (
-                <div className={`py-10 text-center text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>暂无历史会话</div>
+                <div className={`py-10 text-center text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>暂无历史对话</div>
               ) : (
                 <div className="space-y-2">
                   {sessions.map((session) => {
@@ -224,9 +264,9 @@ const ChatPage: React.FC = () => {
                               ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800'
                               : 'border-stone-200 bg-white hover:bg-stone-50'
                         }`}
-                      >
+                        >
                         <div className={`truncate text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>
-                          {session.title || `会话 ${session.id.slice(0, 8)}`}
+                          {session.title || `对话 ${session.id.slice(0, 8)}`}
                         </div>
                         <div className={`mt-1 flex items-center justify-between text-xs ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
                           <span>{formatSessionTime(session.created_at)}</span>
