@@ -1,6 +1,7 @@
 import React from 'react'
 import { Message } from '../../services/chatService'
 import { UserIcon } from '@heroicons/react/24/outline'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 interface MessageItemProps {
   message: Message
@@ -175,7 +176,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             {message.image_urls.map((url, index) => (
               <img
                 key={index}
-                src={url}
+                src={resolveMediaUrl(url)}
                 alt={`图片 ${index + 1}`}
                 className="h-28 w-full rounded-lg object-cover ring-1 ring-black/5"
               />

@@ -5,6 +5,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Moment } from '../../services/momentService'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 interface MomentCardProps {
   moment: Moment
@@ -35,7 +36,7 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
         onClick={() => onPreview(0)}
       >
         <img
-          src={images[0]}
+          src={resolveMediaUrl(images[0])}
           alt="动态图片"
           className="max-h-72 w-auto max-w-[16rem] object-cover"
         />
@@ -53,7 +54,11 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
           className="h-20 w-20 overflow-hidden bg-stone-100"
           onClick={() => onPreview(index)}
         >
-          <img src={image} alt={`动态图片 ${index + 1}`} className="h-full w-full object-cover" />
+          <img
+            src={resolveMediaUrl(image)}
+            alt={`动态图片 ${index + 1}`}
+            className="h-full w-full object-cover"
+          />
         </button>
       ))}
     </div>
@@ -216,7 +221,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
           onClick={() => setPreviewIndex(null)}
         >
           <img
-            src={moment.image_urls[previewIndex]}
+            src={resolveMediaUrl(moment.image_urls[previewIndex])}
             alt="预览大图"
             className="max-h-[90vh] max-w-full object-contain"
             onClick={(event) => event.stopPropagation()}

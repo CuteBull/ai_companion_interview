@@ -32,9 +32,24 @@ def _save_local_upload(
     local_path.write_bytes(content)
 
     public_id = f"local/{category}/{stored_name}"
-    url = str(request.url_for("uploaded_file", path=f"{category}/{stored_name}"))
+    relative_path = f"{category}/{stored_name}"
+    url = _build_public_upload_url(request, relative_path)
 
     return url, public_id, extension.lstrip(".")
+
+
+def _build_public_upload_url(request: Request, path: str) -> str:
+    forwarded_proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").split(",")[0].strip()
+    forwarded_host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].strip()
+
+    if forwarded_host:
+        scheme = forwarded_proto if forwarded_proto in ("http", "https") else "https"
+        # 对公网域名强制HTTPS，避免前端页面出现mixed-content导致图片加载失败
+        if scheme == "http" and "localhost" not in forwarded_host and "127.0.0.1" not in forwarded_host:
+            scheme = "https"
+        return f"{scheme}://{forwarded_host}/uploads/{path}"
+
+    return str(request.url_for("uploaded_file", path=path))
 
 @router.post("")
 async def upload_file(

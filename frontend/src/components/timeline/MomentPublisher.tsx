@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { PhotoIcon } from '@heroicons/react/24/outline'
 import { uploadFile } from '../../services/api'
+import { resolveMediaUrl } from '../../utils/mediaUrl'
 
 interface MomentPublisherProps {
   publishing: boolean
@@ -83,7 +84,11 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({ publishing, onPublish
             <div className="grid grid-cols-3 gap-2">
               {imageUrls.map((url, index) => (
                 <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg">
-                  <img src={url} alt={`已选图片 ${index + 1}`} className="h-20 w-full object-cover" />
+                  <img
+                    src={resolveMediaUrl(url)}
+                    alt={`已选图片 ${index + 1}`}
+                    className="h-20 w-full object-cover"
+                  />
                   <button
                     type="button"
                     className="absolute right-1 top-1 rounded bg-black/55 px-1 text-xs text-white"
