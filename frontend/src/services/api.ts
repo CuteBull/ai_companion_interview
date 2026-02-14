@@ -16,8 +16,16 @@ const api = axios.create({
   headers: defaultHeaders,
 })
 
+export interface UploadResponse {
+  url: string
+  public_id: string
+  format: string
+  size: number
+  storage?: 'cloudinary' | 'local'
+}
+
 // 文件上传API
-export const uploadFile = async (file: File) => {
+export const uploadFile = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData()
   formData.append('file', file)
 
@@ -28,7 +36,7 @@ export const uploadFile = async (file: File) => {
     },
   })
 
-  return response.data
+  return response.data as UploadResponse
 }
 
 // 音频转录API（通过后端代理）

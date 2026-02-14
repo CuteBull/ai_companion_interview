@@ -90,8 +90,14 @@ async def upload_file(
             try:
                 url, public_id = file_service.upload_image(tmp_path)
                 file_format = Path(file.filename or "").suffix.lstrip(".").lower() or "jpg"
+                storage = "cloudinary"
             except Exception as exc:
-                logger.warning("Cloudinary image upload failed, using local fallback: %s", exc)
+                logger.warning("Cloudinary image upload failed: %s", exc)
+                if not settings.ALLOW_LOCAL_UPLOAD_FALLBACK:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="图片存储服务不可用，请检查 Cloudinary 配置后重试",
+                    )
                 url, public_id, file_format = _save_local_upload(
                     request=request,
                     content=content,
@@ -99,12 +105,19 @@ async def upload_file(
                     category="images",
                     fallback_extension=".jpg",
                 )
+                storage = "local"
         else:
             try:
                 url, public_id = file_service.upload_audio(tmp_path)
                 file_format = "mp3"
+                storage = "cloudinary"
             except Exception as exc:
-                logger.warning("Cloudinary audio upload failed, using local fallback: %s", exc)
+                logger.warning("Cloudinary audio upload failed: %s", exc)
+                if not settings.ALLOW_LOCAL_UPLOAD_FALLBACK:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="音频存储服务不可用，请检查 Cloudinary 配置后重试",
+                    )
                 url, public_id, file_format = _save_local_upload(
                     request=request,
                     content=content,
@@ -112,6 +125,7 @@ async def upload_file(
                     category="audio",
                     fallback_extension=".webm",
                 )
+                storage = "local"
 
         # 保存文件记录
         file_record = FileModel(
@@ -127,7 +141,8 @@ async def upload_file(
             "url": url,
             "public_id": public_id,
             "format": file_format,
-            "size": len(content)
+            "size": len(content),
+            "storage": storage,
         }
 
     finally:

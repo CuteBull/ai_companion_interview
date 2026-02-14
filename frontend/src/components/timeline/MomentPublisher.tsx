@@ -29,6 +29,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [showedLocalStorageNotice, setShowedLocalStorageNotice] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -50,10 +51,16 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
     const toUpload = files.slice(0, remainCount)
     setUploading(true)
     try {
+      let localStorageUsed = false
       const uploaded = await Promise.all(toUpload.map(async (file) => {
         const result = await uploadFile(file)
+        if (result.storage === 'local') localStorageUsed = true
         return result.url as string
       }))
+      if (localStorageUsed && !showedLocalStorageNotice) {
+        setShowedLocalStorageNotice(true)
+        alert('当前图片使用临时本地存储，服务重启或重新部署后可能失效。请检查后端 Cloudinary 配置。')
+      }
       setImageUrls((prev) => [...prev, ...uploaded])
     } catch (error) {
       console.error('Upload images failed:', error)
@@ -71,6 +78,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
     setAvatarUploading(true)
     try {
       const result = await uploadFile(file)
+      if (result.storage === 'local' && !showedLocalStorageNotice) {
+        setShowedLocalStorageNotice(true)
+        alert('当前头像使用临时本地存储，服务重启或重新部署后可能失效。请检查后端 Cloudinary 配置。')
+      }
       await onAvatarChange(result.url as string)
     } catch (error) {
       console.error('Upload avatar failed:', error)
