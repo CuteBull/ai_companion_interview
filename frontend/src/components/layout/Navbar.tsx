@@ -10,6 +10,12 @@ const Navbar: React.FC = () => {
     { path: '/timeline', label: '朋友圈', icon: ClockIcon },
   ]
   const isChatPage = location.pathname === '/' || location.pathname === '/chat'
+  const isTimelinePage = location.pathname.startsWith('/timeline')
+  const brandTitle = isTimelinePage ? '朋友圈' : '多模态对话'
+  const brandSubtitle = isTimelinePage ? '生活记录 · 点赞评论' : 'AI陪伴 · 图文语音'
+  const brandDescription = isTimelinePage
+    ? '在这里记录当下、发布图片、和朋友互动。'
+    : '支持文本、图片、语音输入。你可以自由倾诉，我会持续记录上下文并陪你聊下去。'
 
   return (
     <nav className="sticky top-0 z-30 px-4 pt-4 md:px-6">
@@ -25,12 +31,12 @@ const Navbar: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-stone-900">
-                多模态对话
+                {brandTitle}
               </h1>
-              <p className="text-xs text-stone-500 sm:block">AI陪伴 · 图文语音</p>
-              {isChatPage && (
+              <p className="text-xs text-stone-500 sm:block">{brandSubtitle}</p>
+              {(isChatPage || isTimelinePage) && (
                 <p className="mt-1 hidden text-sm text-stone-600 lg:block">
-                  支持文本、图片、语音输入。你可以自由倾诉，我会持续记录上下文并陪你聊下去。
+                  {brandDescription}
                 </p>
               )}
             </div>
