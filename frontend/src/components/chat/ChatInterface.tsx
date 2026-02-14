@@ -6,9 +6,10 @@ import { Message } from '../../services/chatService'
 
 interface ChatInterfaceProps {
   sessionId?: string
+  onSessionChange?: (sessionId: string | undefined) => void
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChange }) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
   const [isSending, setIsSending] = useState(false)
@@ -32,10 +33,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
       if (!sessionId) {
         setCurrentSessionId(undefined)
         setMessages([])
+        onSessionChange?.(undefined)
         return
       }
 
       setCurrentSessionId(sessionId)
+      onSessionChange?.(sessionId)
       setIsLoadingHistory(true)
       try {
         const sessionData = await getSessionMessages(sessionId)
@@ -56,7 +59,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
     return () => {
       isCancelled = true
     }
-  }, [sessionId])
+  }, [sessionId, onSessionChange])
 
   // 处理发送消息
   const handleSendMessage = async (
@@ -109,6 +112,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId }) => {
         },
         (newSessionId) => {
           setCurrentSessionId(newSessionId)
+          onSessionChange?.(newSessionId)
         },
         (error) => {
           console.error('Chat error:', error)
