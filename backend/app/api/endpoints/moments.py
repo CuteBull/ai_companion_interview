@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload
 
@@ -22,6 +24,14 @@ def _normalize_username(name: str | None, default: str = "你") -> str:
     return normalized or default
 
 
+def _to_utc_iso(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    else:
+        value = value.astimezone(timezone.utc)
+    return value.isoformat().replace("+00:00", "Z")
+
+
 def _serialize_comment(comment: MomentComment) -> MomentCommentResponse:
     return MomentCommentResponse(
         id=comment.id,
@@ -30,7 +40,7 @@ def _serialize_comment(comment: MomentComment) -> MomentCommentResponse:
         user_name=comment.user_name,
         reply_to_name=comment.reply_to_name,
         content=comment.content,
-        created_at=comment.created_at.isoformat(),
+        created_at=_to_utc_iso(comment.created_at),
     )
 
 
@@ -46,7 +56,7 @@ def _serialize_moment(moment: Moment, me: str = "你") -> MomentResponse:
         image_urls=moment.image_urls or [],
         location=moment.location,
         session_id=moment.session_id,
-        created_at=moment.created_at.isoformat(),
+        created_at=_to_utc_iso(moment.created_at),
         like_count=len(likes),
         comment_count=len(comments),
         likes=likes,
