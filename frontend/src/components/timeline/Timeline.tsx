@@ -1,25 +1,47 @@
 import React from 'react'
-import ConversationCard from './ConversationCard'
-import { Session } from '../../services/chatService'
+import MomentCard from './MomentCard'
+import { Moment } from '../../services/momentService'
 
 interface TimelineProps {
-  sessions: Session[]
+  moments: Moment[]
+  onToggleLike: (momentId: string) => Promise<void>
+  onCreateComment: (
+    momentId: string,
+    content: string,
+    parentId?: string,
+    replyToName?: string
+  ) => Promise<void>
+  pendingLikeMomentId?: string | null
+  pendingCommentMomentId?: string | null
 }
 
-const Timeline: React.FC<TimelineProps> = ({ sessions }) => {
-  if (sessions.length === 0) {
+const Timeline: React.FC<TimelineProps> = ({
+  moments,
+  onToggleLike,
+  onCreateComment,
+  pendingLikeMomentId,
+  pendingCommentMomentId,
+}) => {
+  if (moments.length === 0) {
     return (
       <div className="surface-card text-center py-12 text-stone-500">
-        <div className="text-2xl text-stone-800">暂无对话</div>
-        <div className="mt-2 text-sm">去对话页面开始新的对话</div>
+        <div className="text-2xl text-stone-800">还没有朋友圈动态</div>
+        <div className="mt-2 text-sm">发一条动态，记录你此刻的心情</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 md:space-y-5">
-      {sessions.map((session, index) => (
-        <ConversationCard key={session.id} session={session} index={index} />
+    <div className="surface-card overflow-hidden">
+      {moments.map((moment) => (
+        <MomentCard
+          key={moment.id}
+          moment={moment}
+          onToggleLike={onToggleLike}
+          onCreateComment={onCreateComment}
+          likeLoading={pendingLikeMomentId === moment.id}
+          commentLoading={pendingCommentMomentId === moment.id}
+        />
       ))}
     </div>
   )

@@ -206,6 +206,71 @@ def test_openai_service_prepare_image_url_for_local_upload(tmp_path, monkeypatch
     )
     assert prepared_url.startswith("data:image/png;base64,")
 
+
+def test_moments_workflow(test_db):
+    """测试朋友圈动态发布、点赞和评论回复流程"""
+    create_response = client.post(
+        "/api/moments",
+        json={
+            "content": "今天风很舒服，适合散步。",
+            "image_urls": ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+            "location": "杭州",
+        },
+    )
+    assert create_response.status_code == 200
+    moment = create_response.json()
+    moment_id = moment["id"]
+    assert moment["content"] == "今天风很舒服，适合散步。"
+    assert len(moment["image_urls"]) == 2
+    assert moment["like_count"] == 0
+    assert moment["comment_count"] == 0
+
+    list_response = client.get("/api/moments")
+    assert list_response.status_code == 200
+    list_data = list_response.json()
+    assert len(list_data["moments"]) >= 1
+    assert list_data["moments"][0]["id"] == moment_id
+
+    like_response = client.post(f"/api/moments/{moment_id}/likes/toggle", json={"user_name": "你"})
+    assert like_response.status_code == 200
+    like_data = like_response.json()
+    assert like_data["liked"] is True
+    assert like_data["like_count"] == 1
+    assert like_data["likes"] == ["你"]
+
+    unlike_response = client.post(f"/api/moments/{moment_id}/likes/toggle", json={"user_name": "你"})
+    assert unlike_response.status_code == 200
+    unlike_data = unlike_response.json()
+    assert unlike_data["liked"] is False
+    assert unlike_data["like_count"] == 0
+    assert unlike_data["likes"] == []
+
+    comment_response = client.post(
+        f"/api/moments/{moment_id}/comments",
+        json={"content": "抱抱你，明天会更好。", "user_name": "AI陪伴助手"},
+    )
+    assert comment_response.status_code == 200
+    comment_data = comment_response.json()
+    assert comment_data["user_name"] == "AI陪伴助手"
+
+    reply_response = client.post(
+        f"/api/moments/{moment_id}/comments",
+        json={
+            "content": "谢谢你，我感觉好多了。",
+            "parent_id": comment_data["id"],
+            "reply_to_name": "AI陪伴助手",
+            "user_name": "你",
+        },
+    )
+    assert reply_response.status_code == 200
+    reply_data = reply_response.json()
+    assert reply_data["parent_id"] == comment_data["id"]
+    assert reply_data["reply_to_name"] == "AI陪伴助手"
+
+    refreshed = client.get("/api/moments").json()["moments"][0]
+    assert refreshed["comment_count"] == 2
+    assert len(refreshed["comments"]) == 2
+
 # 创建配置文件
 # tests/conftest.py
 from unittest.mock import AsyncMock, Mock

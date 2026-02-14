@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from app.api.endpoints import chat, upload, sessions, health
+from app.api.endpoints import chat, upload, sessions, health, moments
 from app.core.config import settings
 from app.middleware import init_error_handlers, init_rate_limit, api_key_middleware as auth_middleware
 
@@ -34,6 +34,7 @@ init_rate_limit(app)
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(sessions.router, prefix="/api/sessions", tags=["sessions"])
+app.include_router(moments.router, prefix="/api/moments", tags=["moments"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 
 @app.get("/")

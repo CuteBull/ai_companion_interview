@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.models.session import Session
 from app.models.message import Message
 from app.models.file import File
+from app.models.moment import Moment, MomentLike, MomentComment
 
 # 确保所有模型都被SQLAlchemy发现
 # 导入后不需要其他操作，Base.metadata会自动包含它们
