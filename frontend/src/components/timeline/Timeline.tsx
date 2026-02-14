@@ -33,7 +33,7 @@ const Timeline: React.FC<TimelineProps> = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/60">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-950/60">
       {moments.map((moment) => (
         <MomentCard
           key={moment.id}

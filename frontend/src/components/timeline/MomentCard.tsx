@@ -160,7 +160,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
               </button>
 
               {showActionMenu && (
-                <div className="absolute right-0 top-10 z-30 flex overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/95 shadow-2xl">
+                <div className="absolute bottom-12 right-0 z-50 flex overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/95 shadow-2xl">
                   <button
                     type="button"
                     onClick={async () => {
