@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
+from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.moment import Moment, MomentLike, MomentComment
 from app.schemas.moment import (
@@ -34,6 +37,68 @@ def _to_utc_iso(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
 
 
+def _extract_local_upload_relative_path(url: str) -> str | None:
+    if not url:
+        return None
+
+    if url.startswith("/uploads/"):
+        return url[len("/uploads/"):].lstrip("/")
+
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return None
+
+    if parsed.path.startswith("/uploads/"):
+        return parsed.path[len("/uploads/"):].lstrip("/")
+    return None
+
+
+def _local_upload_exists(url: str) -> bool | None:
+    """返回:
+    - True: 本地上传且文件存在
+    - False: 本地上传但文件不存在
+    - None: 非本地上传URL，无法在本地校验
+    """
+    relative_path = _extract_local_upload_relative_path(url)
+    if relative_path is None:
+        return None
+
+    candidate = Path(relative_path)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        return False
+
+    upload_root = Path(settings.LOCAL_UPLOAD_DIR).resolve()
+    target = (upload_root / candidate).resolve()
+    if upload_root not in target.parents and target != upload_root:
+        return False
+    return target.exists()
+
+
+def _sanitize_media_url(url: str | None) -> str | None:
+    normalized = (url or "").strip()
+    if not normalized:
+        return None
+
+    local_exists = _local_upload_exists(normalized)
+    if local_exists is False:
+        return None
+    return normalized
+
+
+def _sanitize_image_urls(image_urls: list[str] | None) -> list[str]:
+    sanitized: list[str] = []
+    for raw in image_urls or []:
+        normalized = (raw or "").strip()
+        if not normalized:
+            continue
+        local_exists = _local_upload_exists(normalized)
+        if local_exists is False:
+            continue
+        sanitized.append(normalized)
+    return sanitized
+
+
 def _serialize_comment(comment: MomentComment) -> MomentCommentResponse:
     return MomentCommentResponse(
         id=comment.id,
@@ -53,9 +118,9 @@ def _serialize_moment(moment: Moment, me: str = "你") -> MomentResponse:
     return MomentResponse(
         id=moment.id,
         author_name=moment.author_name,
-        author_avatar_url=moment.author_avatar_url,
+        author_avatar_url=_sanitize_media_url(moment.author_avatar_url),
         content=moment.content,
-        image_urls=moment.image_urls or [],
+        image_urls=_sanitize_image_urls(moment.image_urls),
         location=moment.location,
         session_id=moment.session_id,
         created_at=_to_utc_iso(moment.created_at),
@@ -90,6 +155,20 @@ def get_moments(
         .all()
     )
 
+    # 清理已失效的本地上传URL，避免前端长期展示404坏图占位
+    changed = False
+    for moment in rows:
+        sanitized_avatar = _sanitize_media_url(moment.author_avatar_url)
+        sanitized_images = _sanitize_image_urls(moment.image_urls)
+        if sanitized_avatar != moment.author_avatar_url:
+            moment.author_avatar_url = sanitized_avatar
+            changed = True
+        if sanitized_images != (moment.image_urls or []):
+            moment.image_urls = sanitized_images
+            changed = True
+    if changed:
+        db.commit()
+
     return MomentsListResponse(
         moments=[_serialize_moment(moment, me=me_name) for moment in rows],
         total=total,
@@ -102,7 +181,7 @@ def get_moments(
 @router.post("", response_model=MomentResponse)
 def create_moment(payload: MomentCreateRequest, db: Session = Depends(get_db)):
     content = payload.content.strip()
-    image_urls = [url for url in (payload.image_urls or []) if url]
+    image_urls = _sanitize_image_urls(payload.image_urls)
 
     if not content and not image_urls:
         raise HTTPException(status_code=400, detail="内容和图片不能同时为空")

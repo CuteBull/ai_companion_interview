@@ -29,30 +29,44 @@ interface GridImageProps {
 }
 
 const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
-  if (images.length === 0) return null
+  const [failedIndexes, setFailedIndexes] = useState<number[]>([])
 
-  if (images.length === 1) {
+  useEffect(() => {
+    setFailedIndexes([])
+  }, [images])
+
+  const visibleImages = images
+    .map((image, index) => ({ image, index }))
+    .filter((item) => !failedIndexes.includes(item.index))
+
+  if (visibleImages.length === 0) return null
+
+  if (visibleImages.length === 1) {
+    const item = visibleImages[0]
     return (
       <button
         type="button"
         className="mt-3 block overflow-hidden rounded-sm"
-        onClick={() => onPreview(0)}
+        onClick={() => onPreview(item.index)}
       >
         <img
-          src={resolveMediaUrl(images[0])}
+          src={resolveMediaUrl(item.image)}
           alt="动态图片"
           className="max-h-80 w-auto max-w-[17rem] object-cover"
           loading="lazy"
           decoding="async"
+          onError={() => {
+            setFailedIndexes((prev) => (prev.includes(item.index) ? prev : [...prev, item.index]))
+          }}
         />
       </button>
     )
   }
 
-  const useTwoCols = images.length === 2 || images.length === 4
+  const useTwoCols = visibleImages.length === 2 || visibleImages.length === 4
   return (
     <div className={`mt-3 grid gap-1 ${useTwoCols ? 'grid-cols-2 max-w-[11.5rem]' : 'grid-cols-3 max-w-[17.5rem]'}`}>
-      {images.map((image, index) => (
+      {visibleImages.map(({ image, index }) => (
         <button
           key={`${image}-${index}`}
           type="button"
@@ -65,6 +79,9 @@ const MomentImageGrid: React.FC<GridImageProps> = ({ images, onPreview }) => {
             className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
+            onError={() => {
+              setFailedIndexes((prev) => (prev.includes(index) ? prev : [...prev, index]))
+            }}
           />
         </button>
       ))}
@@ -269,6 +286,10 @@ const MomentCard: React.FC<MomentCardProps> = ({
                                       className="h-20 w-20 cursor-zoom-in rounded-sm object-cover"
                                       loading="lazy"
                                       decoding="async"
+                                      onError={(event) => {
+                                        const target = event.currentTarget
+                                        target.style.display = 'none'
+                                      }}
                                       onClick={(event) => {
                                         event.stopPropagation()
                                         window.open(resolveMediaUrl(url), '_blank', 'noopener,noreferrer')

@@ -33,6 +33,7 @@
    - `CLOUDINARY_CLOUD_NAME`
    - `CLOUDINARY_API_KEY`
    - `CLOUDINARY_API_SECRET`
+   - `ALLOW_LOCAL_UPLOAD_FALLBACK=false`（生产环境建议关闭本地回退，避免重启后图片失效）
    - `CORS_ORIGINS=["https://你的前端域名.vercel.app"]`
 6. 记下后端地址，如：`https://your-api.onrender.com`
 

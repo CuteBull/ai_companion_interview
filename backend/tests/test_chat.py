@@ -5,6 +5,7 @@ from app.core.database import Base, engine, SessionLocal
 from app.core.config import settings
 from app.models.session import Session as SessionModel
 from app.models.message import Message as MessageModel
+from app.models.moment import Moment as MomentModel
 from app.api.endpoints import upload as upload_endpoint
 from app.services import chat_service
 from app.services.file_service import FileService
@@ -96,6 +97,7 @@ def test_upload_endpoint():
 def test_upload_endpoint_falls_back_to_local_storage(test_db, monkeypatch, tmp_path):
     """测试Cloudinary失败时回退本地上传"""
     monkeypatch.setattr(settings, "LOCAL_UPLOAD_DIR", str(tmp_path))
+    monkeypatch.setattr(settings, "ALLOW_LOCAL_UPLOAD_FALLBACK", True)
 
     def mock_failed_upload(_tmp_path):
         raise RuntimeError("cloudinary failed")
@@ -275,13 +277,13 @@ def test_moments_workflow(test_db):
 
     avatar_update = client.patch(
         "/api/moments/avatar",
-        json={"user_name": "你", "author_avatar_url": "/uploads/images/new-avatar.png"},
+        json={"user_name": "你", "author_avatar_url": "https://example.com/new-avatar.png"},
     )
     assert avatar_update.status_code == 200
     assert avatar_update.json()["updated_count"] >= 1
 
     refreshed_after_avatar = client.get("/api/moments").json()["moments"][0]
-    assert refreshed_after_avatar["author_avatar_url"] == "/uploads/images/new-avatar.png"
+    assert refreshed_after_avatar["author_avatar_url"] == "https://example.com/new-avatar.png"
 
     forbidden_delete = client.delete(f"/api/moments/{moment_id}", params={"user_name": "别人"})
     assert forbidden_delete.status_code == 403
@@ -292,6 +294,26 @@ def test_moments_workflow(test_db):
 
     after_delete = client.get("/api/moments").json()
     assert all(item["id"] != moment_id for item in after_delete["moments"])
+
+
+def test_moments_endpoint_filters_missing_local_media(test_db, monkeypatch, tmp_path):
+    """本地上传URL若文件不存在，应从返回中剔除，避免前端出现坏图"""
+    monkeypatch.setattr(settings, "LOCAL_UPLOAD_DIR", str(tmp_path))
+
+    moment = MomentModel(
+        author_name="你",
+        author_avatar_url="/uploads/images/missing-avatar.png",
+        content="测试坏图过滤",
+        image_urls=["/uploads/images/missing-1.png", "https://example.com/ok.png"],
+    )
+    test_db.add(moment)
+    test_db.commit()
+
+    data = client.get("/api/moments").json()
+    item = next(row for row in data["moments"] if row["id"] == moment.id)
+
+    assert item["author_avatar_url"] is None
+    assert item["image_urls"] == ["https://example.com/ok.png"]
 
 # 创建配置文件
 # tests/conftest.py

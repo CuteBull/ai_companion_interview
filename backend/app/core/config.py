@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
     LOCAL_UPLOAD_DIR: str = "./uploads"
-    ALLOW_LOCAL_UPLOAD_FALLBACK: bool = True
+    ALLOW_LOCAL_UPLOAD_FALLBACK: bool = False
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
