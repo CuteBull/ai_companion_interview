@@ -3,6 +3,7 @@ import MessageList from './MessageList'
 import InputArea from './InputArea'
 import { getSessionMessages, streamChat } from '../../services/chatService'
 import { Message } from '../../services/chatService'
+import { useTheme } from '../../contexts/ThemeContext'
 
 interface ChatInterfaceProps {
   sessionId?: string
@@ -10,6 +11,8 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChange }) => {
+  const { theme } = useTheme()
+  const isDarkMode = theme === 'dark'
   const [messages, setMessages] = useState<Message[]>([])
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
   const [isSending, setIsSending] = useState(false)
@@ -195,21 +198,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
 
   return (
     <div className="surface-card overflow-hidden" role="main">
-      <div className="relative flex h-[70vh] min-h-[520px] flex-col">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-teal-50/70 to-transparent" />
-        <div className="flex-1 overflow-y-auto px-4 pb-3 pt-3 md:px-6">
+      <div className="relative flex h-[68vh] min-h-[500px] flex-col">
+        <div className={`pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b ${
+          isDarkMode ? 'from-teal-900/25 to-transparent' : 'from-teal-50/70 to-transparent'
+        }`} />
+        <div className="flex-1 overflow-y-auto px-4 pb-2 pt-2 md:px-6">
           <MessageList messages={messages} />
           <div ref={messagesEndRef} />
         </div>
 
         {(isLoadingHistory || isSending) && (
-          <div className="border-t border-teal-100 bg-teal-50/60 p-3">
-            <div className="text-center text-sm font-medium text-teal-700">
+          <div className={`border-t p-3 ${
+            isDarkMode
+              ? 'border-zinc-700 bg-zinc-900/60'
+              : 'border-teal-100 bg-teal-50/60'
+          }`}>
+            <div className={`text-center text-sm font-medium ${
+              isDarkMode ? 'text-teal-200' : 'text-teal-700'
+            }`}>
               {isLoadingHistory ? '加载历史消息...' : '正在思考...'}
             </div>
           </div>
         )}
-        <div className="border-t border-stone-200/80 bg-white/70 p-4 md:p-5">
+        <div className={`border-t p-3 md:p-4 ${
+          isDarkMode
+            ? 'border-zinc-700 bg-zinc-950/70'
+            : 'border-stone-200/80 bg-white/70'
+        }`}>
           <InputArea onSend={handleSendMessage} isLoading={isSending || isLoadingHistory} />
         </div>
       </div>

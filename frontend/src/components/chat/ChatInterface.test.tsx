@@ -1,13 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import type { ReactElement } from 'react'
 import ChatInterface from './ChatInterface'
 import { getSessionMessages, streamChat } from '../../services/chatService'
+import { ThemeProvider } from '../../contexts/ThemeContext'
 
 // 模拟chatService
 vi.mock('../../services/chatService', () => ({
   streamChat: vi.fn(),
   getSessionMessages: vi.fn(),
 }))
+
+const renderWithTheme = (ui: ReactElement) => {
+  return render(
+    <ThemeProvider>
+      {ui}
+    </ThemeProvider>
+  )
+}
 
 describe('ChatInterface', () => {
   beforeEach(() => {
@@ -22,7 +32,7 @@ describe('ChatInterface', () => {
   })
 
   it('渲染空聊天界面', () => {
-    render(<ChatInterface />)
+    renderWithTheme(<ChatInterface />)
 
     // 检查界面元素
     expect(screen.getByRole('main')).toBeInTheDocument()
@@ -30,7 +40,7 @@ describe('ChatInterface', () => {
   })
 
   it('带会话ID时会加载历史且不显示会话ID', async () => {
-    render(<ChatInterface sessionId="test-session-123" />)
+    renderWithTheme(<ChatInterface sessionId="test-session-123" />)
 
     expect(screen.queryByText(/会话ID:/i)).not.toBeInTheDocument()
     await waitFor(() => {
@@ -56,7 +66,7 @@ describe('ChatInterface', () => {
       ],
     })
 
-    render(<ChatInterface sessionId="history-session" />)
+    renderWithTheme(<ChatInterface sessionId="history-session" />)
 
     await waitFor(() => {
       expect(getSessionMessages).toHaveBeenCalledWith('history-session')
@@ -73,7 +83,7 @@ describe('ChatInterface', () => {
       return 'Hello!'
     })
 
-    render(<ChatInterface />)
+    renderWithTheme(<ChatInterface />)
 
     // 输入消息
     const input = screen.getByPlaceholderText(/输入消息/i)
@@ -118,7 +128,7 @@ describe('ChatInterface', () => {
       return 'Hello World!'
     })
 
-    render(<ChatInterface />)
+    renderWithTheme(<ChatInterface />)
 
     // 发送消息
     const input = screen.getByPlaceholderText(/输入消息/i)
@@ -138,7 +148,7 @@ describe('ChatInterface', () => {
       () => new Promise(resolve => setTimeout(() => resolve('response'), 100))
     )
 
-    render(<ChatInterface />)
+    renderWithTheme(<ChatInterface />)
 
     // 发送消息
     const input = screen.getByPlaceholderText(/输入消息/i)
@@ -157,7 +167,7 @@ describe('ChatInterface', () => {
       throw new Error('API Error')
     })
 
-    render(<ChatInterface />)
+    renderWithTheme(<ChatInterface />)
 
     // 发送消息
     const input = screen.getByPlaceholderText(/输入消息/i)

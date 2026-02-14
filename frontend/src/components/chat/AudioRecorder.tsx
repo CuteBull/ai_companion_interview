@@ -5,9 +5,16 @@ import { transcribeAudio } from '../../services/api'
 interface AudioRecorderProps {
   onTranscribed: (text: string) => void
   disabled?: boolean
+  isDarkMode?: boolean
+  className?: string
 }
 
-const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribed, disabled }) => {
+const AudioRecorder: React.FC<AudioRecorderProps> = ({
+  onTranscribed,
+  disabled,
+  isDarkMode = false,
+  className = '',
+}) => {
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [supportedMimeType, setSupportedMimeType] = useState<string>('audio/webm')
@@ -97,7 +104,12 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribed, disabled }
         type="button"
         onClick={stopRecording}
         disabled={disabled}
-        className="rounded-xl border border-rose-300 bg-rose-50 p-2 text-rose-600 transition hover:text-rose-700 disabled:opacity-50"
+        className={`flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:opacity-50 ${
+          isDarkMode
+            ? 'border-rose-500/60 bg-rose-500/15 text-rose-300 hover:bg-rose-500/20'
+            : 'border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100'
+        } ${className}`}
+        aria-label="停止录音"
       >
         <StopIcon className="w-5 h-5" />
       </button>
@@ -109,14 +121,21 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onTranscribed, disabled }
       type="button"
       onClick={startRecording}
       disabled={disabled || isTranscribing}
-      className={`rounded-xl border p-2 transition ${
+      className={`flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:opacity-50 ${
         isTranscribing
-          ? 'border-stone-300 bg-stone-100 text-stone-400 cursor-not-allowed'
-          : 'border-stone-300 bg-white/90 text-stone-600 hover:border-teal-500 hover:text-teal-700'
-      } disabled:opacity-50`}
+          ? isDarkMode
+            ? 'cursor-not-allowed border-zinc-700 bg-zinc-800 text-zinc-500'
+            : 'cursor-not-allowed border-stone-300 bg-stone-100 text-stone-400'
+          : isDarkMode
+            ? 'border-zinc-600 bg-zinc-800 text-zinc-300 hover:border-teal-500 hover:text-teal-300'
+            : 'border-stone-300 bg-white/90 text-stone-600 hover:border-teal-500 hover:text-teal-700'
+      } ${className}`}
+      aria-label="语音输入"
     >
       {isTranscribing ? (
-        <div className="w-5 h-5 border-2 border-stone-300 border-t-teal-700 rounded-full animate-spin" />
+        <div className={`h-5 w-5 animate-spin rounded-full border-2 ${
+          isDarkMode ? 'border-zinc-600 border-t-teal-300' : 'border-stone-300 border-t-teal-700'
+        }`} />
       ) : (
         <MicrophoneIcon className="w-5 h-5" />
       )}
