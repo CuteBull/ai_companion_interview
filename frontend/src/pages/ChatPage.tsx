@@ -125,7 +125,7 @@ const ChatPage: React.FC = () => {
         </div>
 
         <ChatInterface
-          key={`${sessionId ?? 'new'}-${chatResetVersion}`}
+          key={`chat-${chatResetVersion}`}
           sessionId={sessionId}
           onSessionChange={handleSessionChange}
         />

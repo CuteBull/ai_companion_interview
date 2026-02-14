@@ -15,6 +15,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
   const [isSending, setIsSending] = useState(false)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const skipNextHistoryLoadSessionRef = useRef<string | null>(null)
+  const currentSessionIdRef = useRef<string | undefined>(sessionId)
+  const hasMessagesRef = useRef(false)
+
+  useEffect(() => {
+    currentSessionIdRef.current = currentSessionId
+  }, [currentSessionId])
+
+  useEffect(() => {
+    hasMessagesRef.current = messages.length > 0
+  }, [messages.length])
 
   // 滚动到底部
   const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
@@ -34,12 +45,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
       if (!sessionId) {
         setCurrentSessionId(undefined)
         setMessages([])
-        onSessionChange?.(undefined)
+        return
+      }
+
+      // 新会话流式过程中刚拿到sessionId时，跳过一次历史回灌，避免覆盖正在生成的AI消息
+      if (skipNextHistoryLoadSessionRef.current === sessionId) {
+        skipNextHistoryLoadSessionRef.current = null
+        return
+      }
+
+      // 当前已在同一会话并有消息时，不重复回灌历史
+      if (sessionId === currentSessionIdRef.current && hasMessagesRef.current) {
         return
       }
 
       setCurrentSessionId(sessionId)
-      onSessionChange?.(sessionId)
       setIsLoadingHistory(true)
       try {
         const sessionData = await getSessionMessages(sessionId)
@@ -60,7 +80,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
     return () => {
       isCancelled = true
     }
-  }, [sessionId, onSessionChange])
+  }, [sessionId])
 
   // 处理发送消息
   const handleSendMessage = async (
@@ -138,6 +158,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, onSessionChang
         },
         (newSessionId) => {
           setCurrentSessionId(newSessionId)
+          skipNextHistoryLoadSessionRef.current = newSessionId
           onSessionChange?.(newSessionId)
         },
         (error) => {

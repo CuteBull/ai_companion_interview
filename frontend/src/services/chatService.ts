@@ -70,30 +70,64 @@ export const streamChat = async (
 
     const decoder = new TextDecoder()
     let sessionId = ''
-    let buffer = ''
+    let fullText = ''
+    let eventBuffer = ''
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+    const processEvent = (rawEvent: string) => {
+      if (!rawEvent) return
 
-      const chunk = decoder.decode(value)
-      const lines = chunk.split('\n')
+      const lines = rawEvent.split('\n')
+      let eventData = ''
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6)
-          if (data.startsWith('session:')) {
-            sessionId = data.slice(8)
-            onComplete(sessionId)
-          } else {
-            buffer += data
-            onChunk(data)
-          }
+        if (line.startsWith('data:')) {
+          const payload = line.slice(5).trimStart()
+          eventData = eventData ? `${eventData}\n${payload}` : payload
+          continue
         }
+
+        // 兼容后端 chunk 中携带换行但未逐行加 data: 前缀的情况
+        if (eventData) {
+          eventData += `\n${line}`
+        }
+      }
+
+      if (!eventData) return
+
+      if (eventData.startsWith('session:')) {
+        sessionId = eventData.slice(8).trim()
+        if (sessionId) {
+          onComplete(sessionId)
+        }
+      } else {
+        fullText += eventData
+        onChunk(eventData)
       }
     }
 
-    return buffer
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (value) {
+        eventBuffer += decoder.decode(value, { stream: !done })
+      }
+
+      let boundaryIndex = eventBuffer.indexOf('\n\n')
+      while (boundaryIndex !== -1) {
+        const rawEvent = eventBuffer.slice(0, boundaryIndex)
+        processEvent(rawEvent)
+        eventBuffer = eventBuffer.slice(boundaryIndex + 2)
+        boundaryIndex = eventBuffer.indexOf('\n\n')
+      }
+
+      if (done) {
+        // 兜底处理最后一个事件（如果没有以双换行结束）
+        processEvent(eventBuffer)
+        break
+      }
+    }
+
+    return fullText
 
   } catch (error) {
     onError(error instanceof Error ? error : new Error('Unknown error'))
