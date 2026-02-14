@@ -17,6 +17,46 @@ interface MomentPublisherProps {
 }
 
 const MAX_IMAGES = 9
+const CITY_OPTIONS = [
+  '北京',
+  '上海',
+  '广州',
+  '深圳',
+  '杭州',
+  '南京',
+  '苏州',
+  '成都',
+  '重庆',
+  '武汉',
+  '西安',
+  '天津',
+  '长沙',
+  '郑州',
+  '青岛',
+  '宁波',
+  '厦门',
+  '福州',
+  '合肥',
+  '济南',
+  '沈阳',
+  '大连',
+  '长春',
+  '哈尔滨',
+  '昆明',
+  '贵阳',
+  '南宁',
+  '南昌',
+  '太原',
+  '石家庄',
+  '呼和浩特',
+  '兰州',
+  '乌鲁木齐',
+  '海口',
+  '三亚',
+  '澳门',
+  '香港',
+  '台北',
+]
 
 const MomentPublisher: React.FC<MomentPublisherProps> = ({
   publishing,
@@ -202,14 +242,20 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 onChange={handleFilesSelected}
               />
 
-              <input
+              <select
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
-                placeholder="所在位置（可选）"
-                maxLength={120}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+                className="min-w-[150px] rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200 focus:border-zinc-500 focus:outline-none"
                 disabled={publishing}
-              />
+                aria-label="选择所在位置"
+              >
+                <option value="">所在位置（可选）</option>
+                {CITY_OPTIONS.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <button
