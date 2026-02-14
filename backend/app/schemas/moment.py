@@ -8,6 +8,7 @@ class MomentCreateRequest(BaseModel):
     image_urls: Optional[List[str]] = None
     location: Optional[str] = Field(default=None, max_length=120)
     author_name: Optional[str] = Field(default="你", max_length=40)
+    author_avatar_url: Optional[str] = Field(default=None, max_length=512)
     session_id: Optional[str] = None
 
 

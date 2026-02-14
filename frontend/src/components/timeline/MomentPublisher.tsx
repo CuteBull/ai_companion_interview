@@ -2,15 +2,28 @@ import React, { useRef, useState } from 'react'
 import { PhotoIcon } from '@heroicons/react/24/outline'
 import { uploadFile } from '../../services/api'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
+import { AVATAR_OPTIONS } from '../../constants/avatarOptions'
 
 interface MomentPublisherProps {
   publishing: boolean
-  onPublish: (payload: { content: string; image_urls: string[]; location?: string }) => Promise<void>
+  selectedAvatar: string
+  onAvatarChange: (avatarUrl: string) => void
+  onPublish: (payload: {
+    content: string
+    image_urls: string[]
+    location?: string
+    author_avatar_url: string
+  }) => Promise<void>
 }
 
 const MAX_IMAGES = 9
 
-const MomentPublisher: React.FC<MomentPublisherProps> = ({ publishing, onPublish }) => {
+const MomentPublisher: React.FC<MomentPublisherProps> = ({
+  publishing,
+  selectedAvatar,
+  onAvatarChange,
+  onPublish,
+}) => {
   const [content, setContent] = useState('')
   const [location, setLocation] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -52,6 +65,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({ publishing, onPublish
       content: trimmed,
       image_urls: imageUrls,
       location: location.trim() || undefined,
+      author_avatar_url: selectedAvatar,
     })
 
     setContent('')
@@ -65,7 +79,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({ publishing, onPublish
     <div className="surface-card p-4 md:p-5">
       <div className="flex items-start gap-3">
         <img
-          src="/user-avatar.svg"
+          src={resolveMediaUrl(selectedAvatar)}
           alt="用户头像"
           className="h-11 w-11 rounded-md object-cover ring-1 ring-stone-200"
         />
@@ -101,6 +115,27 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({ publishing, onPublish
               ))}
             </div>
           )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-stone-600">选择头像</span>
+            {AVATAR_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onAvatarChange(option.url)}
+                disabled={publishing}
+                className={`rounded-md p-[2px] transition ${
+                  selectedAvatar === option.url
+                    ? 'ring-2 ring-emerald-500'
+                    : 'ring-1 ring-stone-200 hover:ring-emerald-300'
+                }`}
+                title={option.label}
+                aria-label={`选择${option.label}头像`}
+              >
+                <img src={option.url} alt={option.label} className="h-9 w-9 rounded-md object-cover" />
+              </button>
+            ))}
+          </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">

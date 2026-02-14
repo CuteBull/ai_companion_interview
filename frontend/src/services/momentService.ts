@@ -44,6 +44,7 @@ export const createMoment = async (payload: {
   image_urls?: string[]
   location?: string
   author_name?: string
+  author_avatar_url?: string
   session_id?: string
 }): Promise<Moment> => {
   const response = await api.post('/api/moments', payload)

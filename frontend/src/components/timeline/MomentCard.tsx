@@ -82,7 +82,11 @@ const MomentCard: React.FC<MomentCardProps> = ({
     [moment.created_at]
   )
 
-  const authorAvatar = moment.author_name === 'AI陪伴助手' ? '/assistant-avatar.svg' : '/user-avatar.svg'
+  const authorAvatar = moment.author_avatar_url
+    ? resolveMediaUrl(moment.author_avatar_url)
+    : moment.author_name === 'AI陪伴助手'
+      ? '/assistant-avatar.svg'
+      : '/user-avatar.svg'
 
   const handleSubmitComment = async () => {
     const content = commentText.trim()

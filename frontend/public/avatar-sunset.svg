@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="sunsetbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd8a8" />
+      <stop offset="100%" stop-color="#ffa6ad" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#sunsetbg)" />
+  <circle cx="32" cy="25" r="10" fill="#ffe0c7" />
+  <path d="M16 53c2.8-8.9 9.6-13.4 16-13.4S45.2 44.1 48 53z" fill="#9b5b45" />
+  <path d="M20 23.5c0-8.2 5.1-12.2 12-12.2s12 4 12 12.2V26H20z" fill="#523a2d" />
+  <circle cx="27.8" cy="30.2" r="1" fill="#2f2a2a" />
+  <circle cx="36.2" cy="30.2" r="1" fill="#2f2a2a" />
+</svg>

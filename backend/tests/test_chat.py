@@ -215,12 +215,14 @@ def test_moments_workflow(test_db):
             "content": "今天风很舒服，适合散步。",
             "image_urls": ["https://example.com/a.jpg", "https://example.com/b.jpg"],
             "location": "杭州",
+            "author_avatar_url": "/avatar-mint.svg",
         },
     )
     assert create_response.status_code == 200
     moment = create_response.json()
     moment_id = moment["id"]
     assert moment["content"] == "今天风很舒服，适合散步。"
+    assert moment["author_avatar_url"] == "/avatar-mint.svg"
     assert len(moment["image_urls"]) == 2
     assert moment["like_count"] == 0
     assert moment["comment_count"] == 0

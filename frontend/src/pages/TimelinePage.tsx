@@ -8,6 +8,11 @@ import {
   Moment,
   toggleMomentLike,
 } from '../services/momentService'
+import {
+  DEFAULT_AVATAR_URL,
+  TIMELINE_AVATAR_STORAGE_KEY,
+} from '../constants/avatarOptions'
+import { resolveMediaUrl } from '../utils/mediaUrl'
 
 const TimelinePage: React.FC = () => {
   const [moments, setMoments] = useState<Moment[]>([])
@@ -17,6 +22,7 @@ const TimelinePage: React.FC = () => {
   const [pendingCommentMomentId, setPendingCommentMomentId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR_URL)
 
   const loadMoments = async (pageNum: number) => {
     try {
@@ -38,7 +44,24 @@ const TimelinePage: React.FC = () => {
     loadMoments(1)
   }, [])
 
-  const handlePublish = async (payload: { content: string; image_urls: string[]; location?: string }) => {
+  useEffect(() => {
+    const storedAvatar = localStorage.getItem(TIMELINE_AVATAR_STORAGE_KEY)
+    if (storedAvatar) {
+      setSelectedAvatar(storedAvatar)
+    }
+  }, [])
+
+  const handleAvatarChange = (avatarUrl: string) => {
+    setSelectedAvatar(avatarUrl)
+    localStorage.setItem(TIMELINE_AVATAR_STORAGE_KEY, avatarUrl)
+  }
+
+  const handlePublish = async (payload: {
+    content: string
+    image_urls: string[]
+    location?: string
+    author_avatar_url: string
+  }) => {
     try {
       setPublishing(true)
       const created = await createMoment(payload)
@@ -146,7 +169,7 @@ const TimelinePage: React.FC = () => {
           <div className="absolute bottom-3 right-4 flex items-center gap-2">
             <span className="text-sm font-medium text-white drop-shadow">你</span>
             <img
-              src="/user-avatar.svg"
+              src={resolveMediaUrl(selectedAvatar)}
               alt="你的头像"
               className="h-14 w-14 rounded-md border-2 border-white/90 object-cover shadow"
             />
@@ -154,7 +177,12 @@ const TimelinePage: React.FC = () => {
         </div>
       </div>
 
-      <MomentPublisher publishing={publishing} onPublish={handlePublish} />
+      <MomentPublisher
+        publishing={publishing}
+        selectedAvatar={selectedAvatar}
+        onAvatarChange={handleAvatarChange}
+        onPublish={handlePublish}
+      />
 
       <div className="px-1">
         <h1 className="text-base font-semibold text-stone-700">朋友圈</h1>

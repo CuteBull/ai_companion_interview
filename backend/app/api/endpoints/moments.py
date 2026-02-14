@@ -96,6 +96,7 @@ def create_moment(payload: MomentCreateRequest, db: Session = Depends(get_db)):
 
     moment = Moment(
         author_name=_normalize_username(payload.author_name),
+        author_avatar_url=(payload.author_avatar_url or "").strip() or None,
         content=content,
         image_urls=image_urls,
         location=(payload.location or "").strip() or None,
