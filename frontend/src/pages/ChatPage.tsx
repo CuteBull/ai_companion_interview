@@ -4,8 +4,11 @@ import { ClockIcon, PlusIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/
 import { format } from 'date-fns'
 import ChatInterface from '../components/chat/ChatInterface'
 import { Session, getSessions } from '../services/chatService'
+import { useTheme } from '../contexts/ThemeContext'
 
 const ChatPage: React.FC = () => {
+  const { theme } = useTheme()
+  const isDarkMode = theme === 'dark'
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -98,7 +101,7 @@ const ChatPage: React.FC = () => {
     <>
       <div className="mx-auto max-w-5xl space-y-3">
         <div className="flex items-center justify-between px-1">
-          <div className="text-sm text-stone-600">
+          <div className={`text-sm ${isDarkMode ? 'text-zinc-300' : 'text-stone-600'}`}>
             {selectedSession
               ? `当前会话：${selectedSession.title || selectedSession.id.slice(0, 8)}`
               : '当前会话：新对话'}
@@ -108,7 +111,11 @@ const ChatPage: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenNewChat}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white/80 px-3 py-1.5 text-sm text-stone-700 hover:bg-white"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900/80 text-zinc-100 hover:bg-zinc-800'
+                  : 'border-stone-300 bg-white/80 text-stone-700 hover:bg-white'
+              }`}
             >
               <PlusIcon className="h-4 w-4" />
               新对话
@@ -116,7 +123,11 @@ const ChatPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowHistory(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 hover:bg-teal-100"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                isDarkMode
+                  ? 'border-teal-700/80 bg-teal-900/40 text-teal-200 hover:bg-teal-900/60'
+                  : 'border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100'
+              }`}
             >
               <ClockIcon className="h-4 w-4" />
               历史记录
@@ -133,20 +144,26 @@ const ChatPage: React.FC = () => {
 
       {showHistory && (
         <div
-          className="fixed inset-0 z-40 bg-black/35"
+          className={`fixed inset-0 z-40 ${isDarkMode ? 'bg-black/55' : 'bg-black/35'}`}
           onClick={() => setShowHistory(false)}
         >
           <aside
-            className="absolute right-0 top-0 h-full w-full max-w-md border-l border-stone-200 bg-white shadow-2xl"
+            className={`absolute right-0 top-0 h-full w-full max-w-md border-l shadow-2xl ${
+              isDarkMode ? 'border-zinc-700 bg-zinc-950' : 'border-stone-200 bg-white'
+            }`}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3">
-              <h2 className="text-base font-semibold text-stone-900">历史会话</h2>
+            <div className={`flex items-center justify-between border-b px-4 py-3 ${
+              isDarkMode ? 'border-zinc-700' : 'border-stone-200'
+            }`}>
+              <h2 className={`text-base font-semibold ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>历史会话</h2>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={fetchSessions}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded text-stone-500 hover:bg-stone-100"
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded ${
+                    isDarkMode ? 'text-zinc-400 hover:bg-zinc-800' : 'text-stone-500 hover:bg-stone-100'
+                  }`}
                   aria-label="刷新历史会话"
                 >
                   <ArrowPathIcon className="h-5 w-5" />
@@ -154,7 +171,9 @@ const ChatPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowHistory(false)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded text-stone-500 hover:bg-stone-100"
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded ${
+                    isDarkMode ? 'text-zinc-400 hover:bg-zinc-800' : 'text-stone-500 hover:bg-stone-100'
+                  }`}
                   aria-label="关闭历史会话"
                 >
                   <XMarkIcon className="h-5 w-5" />
@@ -162,14 +181,18 @@ const ChatPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-b border-stone-200 px-4 py-3">
+            <div className={`border-b px-4 py-3 ${isDarkMode ? 'border-zinc-700' : 'border-stone-200'}`}>
               <button
                 type="button"
                 onClick={handleOpenNewChat}
                 className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
                   !sessionId
-                    ? 'border-teal-500 bg-teal-50 text-teal-700'
-                    : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                    ? isDarkMode
+                      ? 'border-teal-600 bg-teal-900/40 text-teal-100'
+                      : 'border-teal-500 bg-teal-50 text-teal-700'
+                    : isDarkMode
+                      ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
+                      : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
                 }`}
               >
                 开启新对话
@@ -178,11 +201,11 @@ const ChatPage: React.FC = () => {
 
             <div className="h-[calc(100%-123px)] overflow-y-auto px-3 py-2">
               {loadingSessions ? (
-                <div className="py-10 text-center text-sm text-stone-500">加载中...</div>
+                <div className={`py-10 text-center text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>加载中...</div>
               ) : sessionError ? (
                 <div className="py-10 text-center text-sm text-rose-500">{sessionError}</div>
               ) : sessions.length === 0 ? (
-                <div className="py-10 text-center text-sm text-stone-500">暂无历史会话</div>
+                <div className={`py-10 text-center text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>暂无历史会话</div>
               ) : (
                 <div className="space-y-2">
                   {sessions.map((session) => {
@@ -194,14 +217,18 @@ const ChatPage: React.FC = () => {
                         onClick={() => handleSelectSession(session.id)}
                         className={`w-full rounded-lg border px-3 py-2.5 text-left transition ${
                           active
-                            ? 'border-teal-400 bg-teal-50'
-                            : 'border-stone-200 bg-white hover:bg-stone-50'
+                            ? isDarkMode
+                              ? 'border-teal-600 bg-teal-900/30'
+                              : 'border-teal-400 bg-teal-50'
+                            : isDarkMode
+                              ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800'
+                              : 'border-stone-200 bg-white hover:bg-stone-50'
                         }`}
                       >
-                        <div className="truncate text-sm font-medium text-stone-900">
+                        <div className={`truncate text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>
                           {session.title || `会话 ${session.id.slice(0, 8)}`}
                         </div>
-                        <div className="mt-1 flex items-center justify-between text-xs text-stone-500">
+                        <div className={`mt-1 flex items-center justify-between text-xs ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
                           <span>{formatSessionTime(session.created_at)}</span>
                           <span>{session.message_count} 条消息</span>
                         </div>

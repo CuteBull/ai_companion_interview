@@ -25,6 +25,8 @@ import {
 } from '../constants/avatarOptions'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 import { encodeMomentCommentContent } from '../utils/commentMedia'
+import ThemeSwitcher from '../components/layout/ThemeSwitcher'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface CommentTarget {
   momentId: string
@@ -35,6 +37,8 @@ interface CommentTarget {
 const COMMENT_EMOJIS = ['🙂', '🥺', '🤗', '❤️', '✨', '😭', '😂', '👍', '🙏', '🌈']
 
 const TimelinePage: React.FC = () => {
+  const { theme } = useTheme()
+  const isDarkMode = theme === 'dark'
   const [moments, setMoments] = useState<Moment[]>([])
   const [loading, setLoading] = useState(true)
   const [publishing, setPublishing] = useState(false)
@@ -316,25 +320,28 @@ const TimelinePage: React.FC = () => {
   const commentDisabled = !commentTarget || (!commentText.trim() && !commentImageUrl) || Boolean(pendingCommentMomentId) || commentImageUploading
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[460px] bg-black text-zinc-100">
-      <header className="sticky top-0 z-20 border-b border-zinc-800 bg-black/95 backdrop-blur">
-        <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center px-3 py-2.5">
+    <div className={`mx-auto min-h-screen w-full max-w-[460px] ${isDarkMode ? 'bg-black text-zinc-100' : 'bg-stone-50 text-stone-900'}`}>
+      <header className={`sticky top-0 z-20 border-b backdrop-blur ${isDarkMode ? 'border-zinc-800 bg-black/95' : 'border-stone-200 bg-white/95'}`}>
+        <div className="grid grid-cols-[2.5rem_1fr_auto] items-center px-3 py-2.5">
           <Link
             to="/chat"
-            className="inline-flex h-9 w-9 items-center justify-center rounded text-zinc-200 hover:bg-zinc-900"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded ${isDarkMode ? 'text-zinc-200 hover:bg-zinc-900' : 'text-stone-700 hover:bg-stone-100'}`}
             aria-label="返回对话"
           >
             <ArrowLeftIcon className="h-6 w-6" />
           </Link>
-          <h1 className="text-center text-xl font-semibold tracking-wide text-zinc-100">详情</h1>
-          <button
-            type="button"
-            onClick={() => setShowPublisher((prev) => !prev)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded text-zinc-200 hover:bg-zinc-900"
-            aria-label="更多"
-          >
-            <EllipsisHorizontalIcon className="h-6 w-6" />
-          </button>
+          <h1 className={`text-center text-xl font-semibold tracking-wide ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>详情</h1>
+          <div className="flex items-center justify-end gap-2">
+            <ThemeSwitcher compact />
+            <button
+              type="button"
+              onClick={() => setShowPublisher((prev) => !prev)}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded ${isDarkMode ? 'text-zinc-200 hover:bg-zinc-900' : 'text-stone-700 hover:bg-stone-100'}`}
+              aria-label="更多"
+            >
+              <EllipsisHorizontalIcon className="h-6 w-6" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -400,10 +407,10 @@ const TimelinePage: React.FC = () => {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-zinc-800 bg-black/95 backdrop-blur">
+      <div className={`fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur ${isDarkMode ? 'border-zinc-800 bg-black/95' : 'border-stone-200 bg-white/95'}`}>
         <div className="mx-auto w-full max-w-[460px] px-3 py-2">
           {commentTarget && (
-            <div className="mb-1 flex items-center justify-between text-xs text-zinc-400">
+            <div className={`mb-1 flex items-center justify-between text-xs ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
               <span>
                 {commentTarget.replyToName
                   ? `正在回复：${commentTarget.replyToName}`
@@ -412,7 +419,7 @@ const TimelinePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCommentTarget(null)}
-                className="text-zinc-500 hover:text-zinc-300"
+                className={isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-stone-500 hover:text-stone-700'}
               >
                 取消
               </button>
@@ -443,21 +450,27 @@ const TimelinePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker((prev) => !prev)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${
+                  isDarkMode
+                    ? 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                    : 'border-stone-300 bg-white text-stone-500 hover:bg-stone-100'
+                }`}
                 aria-label="插入表情"
               >
                 <FaceSmileIcon className="h-6 w-6" />
               </button>
 
               {showEmojiPicker && (
-                <div className="absolute bottom-11 left-0 z-40 w-48 rounded-lg border border-zinc-700 bg-zinc-900 p-2 shadow-2xl">
+                <div className={`absolute bottom-11 left-0 z-40 w-48 rounded-lg border p-2 shadow-2xl ${
+                  isDarkMode ? 'border-zinc-700 bg-zinc-900' : 'border-stone-300 bg-white'
+                }`}>
                   <div className="grid grid-cols-5 gap-1">
                     {COMMENT_EMOJIS.map((emoji) => (
                       <button
                         key={emoji}
                         type="button"
                         onClick={() => handleSelectEmoji(emoji)}
-                        className="rounded px-1 py-1 text-xl hover:bg-zinc-800"
+                        className={`rounded px-1 py-1 text-xl ${isDarkMode ? 'hover:bg-zinc-800' : 'hover:bg-stone-100'}`}
                       >
                         {emoji}
                       </button>
@@ -478,13 +491,21 @@ const TimelinePage: React.FC = () => {
               }}
               placeholder={commentPlaceholder}
               maxLength={1000}
-              className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+              className={`min-w-0 flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500'
+                  : 'border-stone-300 bg-white text-stone-800 placeholder:text-stone-400 focus:border-teal-500'
+              }`}
             />
             <button
               type="button"
               onClick={handlePickCommentImage}
               disabled={commentImageUploading}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                  : 'border-stone-300 bg-white text-stone-500 hover:bg-stone-100'
+              }`}
               aria-label="附加图片"
               title="上传评论图片"
             >
@@ -494,7 +515,11 @@ const TimelinePage: React.FC = () => {
               type="button"
               onClick={handleSubmitComment}
               disabled={commentDisabled}
-              className="inline-flex h-9 items-center gap-1 rounded-md bg-zinc-700 px-3 text-sm font-medium text-zinc-100 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className={`inline-flex h-9 items-center gap-1 rounded-md px-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${
+                isDarkMode
+                  ? 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600'
+                  : 'bg-teal-700 text-white hover:bg-teal-800'
+              }`}
             >
               <PaperAirplaneIcon className="h-4 w-4" />
               {commentImageUploading ? '上传中...' : '发送'}
