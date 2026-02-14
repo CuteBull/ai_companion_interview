@@ -273,6 +273,16 @@ def test_moments_workflow(test_db):
     assert refreshed["comment_count"] == 2
     assert len(refreshed["comments"]) == 2
 
+    forbidden_delete = client.delete(f"/api/moments/{moment_id}", params={"user_name": "别人"})
+    assert forbidden_delete.status_code == 403
+
+    delete_response = client.delete(f"/api/moments/{moment_id}", params={"user_name": "你"})
+    assert delete_response.status_code == 200
+    assert delete_response.json()["deleted"] is True
+
+    after_delete = client.get("/api/moments").json()
+    assert all(item["id"] != moment_id for item in after_delete["moments"])
+
 # 创建配置文件
 # tests/conftest.py
 from unittest.mock import AsyncMock, Mock

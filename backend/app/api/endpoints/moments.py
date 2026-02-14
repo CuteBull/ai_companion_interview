@@ -7,6 +7,7 @@ from app.schemas.moment import (
     MomentCommentCreateRequest,
     MomentCommentResponse,
     MomentCreateRequest,
+    MomentDeleteResponse,
     MomentLikeToggleRequest,
     MomentLikeToggleResponse,
     MomentResponse,
@@ -198,3 +199,23 @@ def add_comment(
     db.commit()
     db.refresh(comment)
     return _serialize_comment(comment)
+
+
+@router.delete("/{moment_id}", response_model=MomentDeleteResponse)
+def delete_moment(
+    moment_id: str,
+    user_name: str = Query("你"),
+    db: Session = Depends(get_db),
+):
+    me = _normalize_username(user_name)
+
+    moment = db.query(Moment).filter(Moment.id == moment_id).first()
+    if not moment:
+        raise HTTPException(status_code=404, detail="动态不存在")
+
+    if moment.author_name != me:
+        raise HTTPException(status_code=403, detail="只能删除自己发布的动态")
+
+    db.delete(moment)
+    db.commit()
+    return MomentDeleteResponse(moment_id=moment_id, deleted=True)

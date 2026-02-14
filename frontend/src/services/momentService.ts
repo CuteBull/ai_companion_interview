@@ -73,3 +73,13 @@ export const addMomentComment = async (
   const response = await api.post(`/api/moments/${momentId}/comments`, payload)
   return response.data
 }
+
+export const deleteMoment = async (
+  momentId: string,
+  userName: string = '你'
+): Promise<{ moment_id: string; deleted: boolean }> => {
+  const response = await api.delete(`/api/moments/${momentId}`, {
+    params: { user_name: userName },
+  })
+  return response.data
+}

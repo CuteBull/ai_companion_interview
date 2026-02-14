@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChatBubbleOvalLeftEllipsisIcon, HeartIcon } from '@heroicons/react/24/outline'
+import { ChatBubbleOvalLeftEllipsisIcon, HeartIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -16,8 +16,10 @@ interface MomentCardProps {
     parentId?: string,
     replyToName?: string
   ) => Promise<void>
+  onDelete: (momentId: string) => Promise<void>
   likeLoading: boolean
   commentLoading: boolean
+  deleteLoading: boolean
 }
 
 interface GridImageProps {
@@ -69,8 +71,10 @@ const MomentCard: React.FC<MomentCardProps> = ({
   moment,
   onToggleLike,
   onCreateComment,
+  onDelete,
   likeLoading,
   commentLoading,
+  deleteLoading,
 }) => {
   const [showCommentInput, setShowCommentInput] = useState(false)
   const [commentText, setCommentText] = useState('')
@@ -96,6 +100,12 @@ const MomentCard: React.FC<MomentCardProps> = ({
     setCommentText('')
     setReplyTarget(null)
     setShowCommentInput(false)
+  }
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm('确认删除这条朋友圈内容吗？删除后无法恢复。')
+    if (!confirmed) return
+    await onDelete(moment.id)
   }
 
   return (
@@ -158,6 +168,17 @@ const MomentCard: React.FC<MomentCardProps> = ({
               <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4" />
               评论
             </button>
+            {moment.author_name === '你' && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="inline-flex items-center gap-1 border-l border-stone-200 px-2.5 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <TrashIcon className="h-4 w-4" />
+                删除
+              </button>
+            )}
           </div>
         </div>
 

@@ -11,16 +11,20 @@ interface TimelineProps {
     parentId?: string,
     replyToName?: string
   ) => Promise<void>
+  onDeleteMoment: (momentId: string) => Promise<void>
   pendingLikeMomentId?: string | null
   pendingCommentMomentId?: string | null
+  pendingDeleteMomentId?: string | null
 }
 
 const Timeline: React.FC<TimelineProps> = ({
   moments,
   onToggleLike,
   onCreateComment,
+  onDeleteMoment,
   pendingLikeMomentId,
   pendingCommentMomentId,
+  pendingDeleteMomentId,
 }) => {
   if (moments.length === 0) {
     return (
@@ -39,8 +43,10 @@ const Timeline: React.FC<TimelineProps> = ({
           moment={moment}
           onToggleLike={onToggleLike}
           onCreateComment={onCreateComment}
+          onDelete={onDeleteMoment}
           likeLoading={pendingLikeMomentId === moment.id}
           commentLoading={pendingCommentMomentId === moment.id}
+          deleteLoading={pendingDeleteMomentId === moment.id}
         />
       ))}
     </div>

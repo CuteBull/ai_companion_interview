@@ -4,6 +4,7 @@ import MomentPublisher from '../components/timeline/MomentPublisher'
 import {
   addMomentComment,
   createMoment,
+  deleteMoment,
   getMoments,
   Moment,
   toggleMomentLike,
@@ -20,6 +21,7 @@ const TimelinePage: React.FC = () => {
   const [publishing, setPublishing] = useState(false)
   const [pendingLikeMomentId, setPendingLikeMomentId] = useState<string | null>(null)
   const [pendingCommentMomentId, setPendingCommentMomentId] = useState<string | null>(null)
+  const [pendingDeleteMomentId, setPendingDeleteMomentId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR_URL)
@@ -155,6 +157,22 @@ const TimelinePage: React.FC = () => {
     }
   }
 
+  const handleDeleteMoment = async (momentId: string) => {
+    const snapshot = moments
+    setPendingDeleteMomentId(momentId)
+    setMoments((prev) => prev.filter((item) => item.id !== momentId))
+
+    try {
+      await deleteMoment(momentId, '你')
+    } catch (error) {
+      console.error('Delete moment failed:', error)
+      setMoments(snapshot)
+      alert('删除失败，请稍后重试')
+    } finally {
+      setPendingDeleteMomentId(null)
+    }
+  }
+
   const handleLoadMore = () => {
     const nextPage = page + 1
     setPage(nextPage)
@@ -198,8 +216,10 @@ const TimelinePage: React.FC = () => {
             moments={moments}
             onToggleLike={handleToggleLike}
             onCreateComment={handleCreateComment}
+            onDeleteMoment={handleDeleteMoment}
             pendingLikeMomentId={pendingLikeMomentId}
             pendingCommentMomentId={pendingCommentMomentId}
+            pendingDeleteMomentId={pendingDeleteMomentId}
           />
 
           {hasMore && (

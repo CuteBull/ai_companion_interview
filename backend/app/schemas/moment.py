@@ -62,3 +62,8 @@ class MomentLikeToggleResponse(BaseModel):
     liked: bool
     like_count: int
     likes: List[str]
+
+
+class MomentDeleteResponse(BaseModel):
+    moment_id: str
+    deleted: bool
