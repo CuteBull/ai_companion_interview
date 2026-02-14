@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import FileUpload from './FileUpload'
 import AudioRecorder from './AudioRecorder'
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline'
@@ -11,17 +11,41 @@ interface InputAreaProps {
 const InputArea: React.FC<InputAreaProps> = ({ onSend, isLoading }) => {
   const [message, setMessage] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
-  const [audioText, setAudioText] = useState<string>()
   const fileUploadRef = useRef<{ open: () => void }>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const shouldRefocusRef = useRef(false)
 
-  const submitMessage = () => {
-    if (!message.trim() && imageUrls.length === 0 && !audioText) return
+  const focusInput = () => {
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current
+      if (!textarea) return
+      textarea.focus()
+      const length = textarea.value.length
+      textarea.setSelectionRange(length, length)
+    })
+  }
 
-    const textParts = [message.trim(), audioText?.trim()].filter(Boolean) as string[]
+  useEffect(() => {
+    if (!isLoading && shouldRefocusRef.current) {
+      shouldRefocusRef.current = false
+      focusInput()
+    }
+  }, [isLoading])
+
+  const submitMessage = (audioTranscription?: string) => {
+    const trimmedMessage = message.trim()
+    const trimmedAudio = audioTranscription?.trim()
+    if (!trimmedMessage && imageUrls.length === 0 && !trimmedAudio) return
+
+    const textParts = [trimmedMessage, trimmedAudio].filter(Boolean) as string[]
     onSend(textParts.join('\n'), imageUrls)
     setMessage('')
     setImageUrls([])
-    setAudioText(undefined)
+
+    shouldRefocusRef.current = true
+    if (!isLoading) {
+      focusInput()
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,7 +67,9 @@ const InputArea: React.FC<InputAreaProps> = ({ onSend, isLoading }) => {
   }
 
   const handleAudioTranscribed = (text: string) => {
-    setAudioText(text)
+    if (!isLoading) {
+      submitMessage(text)
+    }
   }
 
   return (
@@ -70,26 +96,11 @@ const InputArea: React.FC<InputAreaProps> = ({ onSend, isLoading }) => {
         </div>
       )}
 
-      {/* 音频文本预览 */}
-      {audioText && (
-        <div className="panel-muted p-3">
-          <div className="text-sm text-teal-800">
-            <span className="font-medium">音频转录:</span> {audioText}
-          </div>
-          <button
-            type="button"
-            onClick={() => setAudioText(undefined)}
-            className="mt-1 text-xs text-teal-600 hover:text-teal-700"
-          >
-            移除
-          </button>
-        </div>
-      )}
-
       {/* 输入区域 */}
       <div className="flex items-end space-x-3">
         <div className="flex-1">
           <textarea
+            ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -119,7 +130,8 @@ const InputArea: React.FC<InputAreaProps> = ({ onSend, isLoading }) => {
 
           <button
             type="submit"
-            disabled={isLoading || (!message.trim() && imageUrls.length === 0 && !audioText)}
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={isLoading || (!message.trim() && imageUrls.length === 0)}
             className="rounded-xl bg-teal-700 p-2 text-white shadow-md shadow-teal-700/20 transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="发送消息"
           >

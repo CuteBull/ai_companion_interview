@@ -1,6 +1,6 @@
 import React from 'react'
 import { Message } from '../../services/chatService'
-import { UserIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import { UserIcon } from '@heroicons/react/24/outline'
 
 interface MessageItemProps {
   message: Message
@@ -143,7 +143,11 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             {isUser ? (
               <UserIcon className="h-3.5 w-3.5" />
             ) : (
-              <CpuChipIcon className="h-3.5 w-3.5 text-stone-600" />
+              <img
+                src="/assistant-avatar.svg"
+                alt="AI陪伴助手头像"
+                className="h-3.5 w-3.5 rounded-full object-cover"
+              />
             )}
           </div>
           <span className="text-[13px] font-medium tracking-wide">

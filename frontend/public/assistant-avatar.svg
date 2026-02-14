@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9d7df" />
+      <stop offset="100%" stop-color="#d8c6ff" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#bg)" />
+  <ellipse cx="32" cy="57" rx="19" ry="13" fill="#8a6fd1" />
+  <circle cx="32" cy="30" r="11.2" fill="#ffd8bd" />
+  <path d="M20.5 32.5C20.5 22.8 25.8 16 32 16c6.2 0 11.5 6.8 11.5 16.5v5.3c0 1.2-1 2.2-2.2 2.2H22.7c-1.2 0-2.2-1-2.2-2.2z" fill="#3b2f2f" />
+  <path d="M24.6 25.2c3.3-3.9 11.3-5.1 15.9-.3l.3 1.1c-5.2-2.4-11-2.3-16.1.1z" fill="#2b2323" />
+  <circle cx="28.3" cy="30.2" r="1.05" fill="#2f2f2f" />
+  <circle cx="35.7" cy="30.2" r="1.05" fill="#2f2f2f" />
+  <path d="M28.6 35.2c2.3 1.9 4.5 1.9 6.8 0" fill="none" stroke="#ad5d5d" stroke-linecap="round" stroke-width="1.5" />
+  <circle cx="24.8" cy="32.7" r="1.8" fill="#f2a8a8" opacity=".55" />
+  <circle cx="39.2" cy="32.7" r="1.8" fill="#f2a8a8" opacity=".55" />
+</svg>

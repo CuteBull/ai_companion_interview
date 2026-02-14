@@ -16,8 +16,12 @@ const Navbar: React.FC = () => {
       <div className="glass-top mx-auto w-full max-w-6xl px-4 py-4 md:px-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Link to="/chat" className="flex items-start space-x-3">
-            <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-700 to-emerald-600 text-white shadow-lg shadow-teal-700/30">
-              <ChatBubbleLeftRightIcon className="h-6 w-6" />
+            <div className="mt-0.5 flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-teal-700/20 ring-1 ring-teal-100">
+              <img
+                src="/assistant-avatar.svg"
+                alt="AI陪伴助手头像"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-stone-900">
