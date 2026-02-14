@@ -264,7 +264,7 @@ const ChatPage: React.FC = () => {
                               ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800'
                               : 'border-stone-200 bg-white hover:bg-stone-50'
                         }`}
-                        >
+                      >
                         <div className={`truncate text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>
                           {session.title || `对话 ${session.id.slice(0, 8)}`}
                         </div>
