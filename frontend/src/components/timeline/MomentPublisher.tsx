@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import { PhotoIcon } from '@heroicons/react/24/outline'
 import { uploadFile } from '../../services/api'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
-import { AVATAR_OPTIONS } from '../../constants/avatarOptions'
+import { DEFAULT_AVATAR_URL } from '../../constants/avatarOptions'
 
 interface MomentPublisherProps {
   publishing: boolean
@@ -28,12 +28,18 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
   const [location, setLocation] = useState('')
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const remainCount = MAX_IMAGES - imageUrls.length
 
   const handlePickImages = () => {
     fileInputRef.current?.click()
+  }
+
+  const handlePickAvatar = () => {
+    avatarInputRef.current?.click()
   }
 
   const handleFilesSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +60,23 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
       alert('图片上传失败，请稍后再试')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleAvatarSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setAvatarUploading(true)
+    try {
+      const result = await uploadFile(file)
+      onAvatarChange(result.url as string)
+    } catch (error) {
+      console.error('Upload avatar failed:', error)
+      alert('头像上传失败，请稍后再试')
+    } finally {
+      setAvatarUploading(false)
     }
   }
 
@@ -117,24 +140,30 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-stone-600">选择头像</span>
-            {AVATAR_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => onAvatarChange(option.url)}
-                disabled={publishing}
-                className={`rounded-md p-[2px] transition ${
-                  selectedAvatar === option.url
-                    ? 'ring-2 ring-emerald-500'
-                    : 'ring-1 ring-stone-200 hover:ring-emerald-300'
-                }`}
-                title={option.label}
-                aria-label={`选择${option.label}头像`}
-              >
-                <img src={option.url} alt={option.label} className="h-9 w-9 rounded-md object-cover" />
-              </button>
-            ))}
+            <span className="text-sm text-stone-600">头像</span>
+            <button
+              type="button"
+              onClick={handlePickAvatar}
+              disabled={publishing || avatarUploading}
+              className="inline-flex items-center rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {avatarUploading ? '上传中...' : '从本地选择头像'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onAvatarChange(DEFAULT_AVATAR_URL)}
+              disabled={publishing || avatarUploading}
+              className="inline-flex items-center rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-sm text-stone-700 hover:border-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              恢复默认
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarSelected}
+            />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">

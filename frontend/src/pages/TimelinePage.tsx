@@ -48,14 +48,15 @@ const TimelinePage: React.FC = () => {
 
   useEffect(() => {
     const storedAvatar = localStorage.getItem(TIMELINE_AVATAR_STORAGE_KEY)
-    if (storedAvatar) {
-      setSelectedAvatar(storedAvatar)
+    if (storedAvatar && storedAvatar.trim()) {
+      setSelectedAvatar(storedAvatar.trim())
     }
   }, [])
 
   const handleAvatarChange = (avatarUrl: string) => {
-    setSelectedAvatar(avatarUrl)
-    localStorage.setItem(TIMELINE_AVATAR_STORAGE_KEY, avatarUrl)
+    const normalized = avatarUrl.trim() || DEFAULT_AVATAR_URL
+    setSelectedAvatar(normalized)
+    localStorage.setItem(TIMELINE_AVATAR_STORAGE_KEY, normalized)
   }
 
   const handlePublish = async (payload: {
