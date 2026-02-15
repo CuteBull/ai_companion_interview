@@ -1,10 +1,13 @@
 from typing import List, Optional, AsyncGenerator, Dict
 import logging
 from datetime import datetime
+from pathlib import Path
+from urllib.parse import urlparse, unquote
 from sqlalchemy.orm import Session
 from app.models.session import Session as SessionModel
 from app.models.message import Message as MessageModel
 from app.models.moment import Moment as MomentModel
+from app.core.config import settings
 from app.services.openai_service import openai_service
 from app.utils.token_counter import token_counter
 
@@ -24,6 +27,8 @@ class ChatService:
         """处理聊天请求，流式返回AI响应"""
 
         try:
+            sanitized_image_urls = self._sanitize_image_urls(image_urls)
+
             # 获取或创建会话
             session = self._get_or_create_session(session_id)
             yield f"session:{session.id}"
@@ -39,7 +44,7 @@ class ChatService:
                 session_id=session.id,
                 role="user",
                 content=user_message,
-                image_urls=image_urls,
+                image_urls=sanitized_image_urls,
                 audio_text=audio_text
             )
             self.db.add(user_msg)
@@ -95,10 +100,11 @@ class ChatService:
         # 转换为字典格式
         history = []
         for msg in messages:
+            sanitized_image_urls = self._sanitize_image_urls(msg.image_urls)
             history.append({
                 "role": msg.role,
                 "content": msg.content,
-                "image_urls": msg.image_urls,
+                "image_urls": sanitized_image_urls,
                 "audio_text": msg.audio_text
             })
 
@@ -172,8 +178,9 @@ class ChatService:
     def _get_session_preview(self, session: SessionModel) -> Optional[str]:
         """获取会话预览图"""
         for message in session.messages:
-            if message.image_urls:
-                return message.image_urls[0]
+            sanitized = self._sanitize_image_urls(message.image_urls)
+            if sanitized:
+                return sanitized[0]
         return None
 
     def _generate_title(self, content: str, max_length: int = 40) -> str:
@@ -182,3 +189,59 @@ class ChatService:
         if not normalized:
             return "新对话"
         return normalized[:max_length]
+
+    def _extract_local_upload_relative_path(self, url: str) -> Optional[str]:
+        if not url:
+            return None
+
+        stripped = url.strip()
+        if not stripped:
+            return None
+
+        if stripped.startswith("/uploads/"):
+            return stripped[len("/uploads/"):].lstrip("/")
+
+        try:
+            parsed = urlparse(stripped)
+        except Exception:
+            return None
+
+        if parsed.path.startswith("/uploads/"):
+            return unquote(parsed.path[len("/uploads/"):].lstrip("/"))
+
+        return None
+
+    def _local_upload_exists(self, url: str) -> Optional[bool]:
+        relative_path = self._extract_local_upload_relative_path(url)
+        if relative_path is None:
+            return None
+
+        candidate = Path(relative_path)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            return False
+
+        upload_root = Path(settings.LOCAL_UPLOAD_DIR).resolve()
+        target = (upload_root / candidate).resolve()
+        if upload_root not in target.parents and target != upload_root:
+            return False
+
+        return target.exists()
+
+    def _sanitize_image_urls(self, image_urls: Optional[List[str]]) -> Optional[List[str]]:
+        if not image_urls:
+            return None
+
+        sanitized: List[str] = []
+        for raw in image_urls:
+            normalized = (raw or "").strip()
+            if not normalized:
+                continue
+
+            exists = self._local_upload_exists(normalized)
+            if exists is False:
+                logger.warning("Skip missing local image URL: %s", normalized)
+                continue
+
+            sanitized.append(normalized)
+
+        return sanitized or None

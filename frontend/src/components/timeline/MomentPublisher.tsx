@@ -3,6 +3,7 @@ import { PhotoIcon } from '@heroicons/react/24/outline'
 import { uploadFile } from '../../services/api'
 import { resolveMediaUrl } from '../../utils/mediaUrl'
 import { DEFAULT_AVATAR_URL } from '../../constants/avatarOptions'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 interface MomentPublisherProps {
   publishing: boolean
@@ -106,7 +107,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
       setImageUrls((prev) => [...prev, ...uploaded])
     } catch (error) {
       console.error('Upload images failed:', error)
-      alert('图片上传失败，请稍后再试')
+      alert(`图片上传失败：${extractErrorMessage(error, '请稍后再试')}`)
     } finally {
       setUploading(false)
     }
@@ -127,7 +128,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
       await onAvatarChange(result.url as string)
     } catch (error) {
       console.error('Upload avatar failed:', error)
-      alert('头像上传失败，请稍后再试')
+      alert(`头像上传失败：${extractErrorMessage(error, '请稍后再试')}`)
     } finally {
       setAvatarUploading(false)
     }

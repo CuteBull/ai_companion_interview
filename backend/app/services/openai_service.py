@@ -25,18 +25,24 @@ class OpenAIService:
         )
         self.deployment = settings.AZURE_OPENAI_DEPLOYMENT
 
-    def _resolve_local_upload_path(self, image_url: str) -> Optional[Path]:
-        """将本地上传URL映射到磁盘路径。"""
-        parsed = urlparse(image_url)
+    def _extract_upload_request_path(self, image_url: str) -> Optional[str]:
+        if not image_url:
+            return None
 
+        parsed = urlparse(image_url)
         if parsed.scheme in ("http", "https"):
-            if parsed.hostname not in {"127.0.0.1", "localhost"}:
-                return None
             request_path = unquote(parsed.path)
         else:
             request_path = unquote(image_url)
 
         if not request_path.startswith("/uploads/"):
+            return None
+        return request_path
+
+    def _resolve_local_upload_path(self, image_url: str) -> Optional[Path]:
+        """将本地上传URL映射到磁盘路径。"""
+        request_path = self._extract_upload_request_path(image_url)
+        if not request_path:
             return None
 
         relative_path = request_path[len("/uploads/"):]
@@ -53,10 +59,14 @@ class OpenAIService:
 
         return candidate
 
-    def _prepare_image_url(self, image_url: str) -> str:
-        """如果是本地上传图片，转换为data URL，确保模型可访问。"""
+    def _prepare_image_url(self, image_url: str) -> Optional[str]:
+        """如果是本地上传图片，转换为data URL；若文件已失效则跳过。"""
+        is_local_upload = self._extract_upload_request_path(image_url) is not None
         local_path = self._resolve_local_upload_path(image_url)
         if not local_path:
+            if is_local_upload:
+                logger.warning("Skip inaccessible local upload for OpenAI: %s", image_url)
+                return None
             return image_url
 
         try:
@@ -66,6 +76,8 @@ class OpenAIService:
             return f"data:{mime_type};base64,{encoded}"
         except Exception as exc:
             logger.warning("Failed to convert local image to data URL: %s", exc)
+            if is_local_upload:
+                return None
             return image_url
 
     async def chat_completion_stream(
@@ -210,6 +222,8 @@ class OpenAIService:
             if msg.get("image_urls"):
                 for img_url in msg["image_urls"]:
                     prepared_url = self._prepare_image_url(img_url)
+                    if not prepared_url:
+                        continue
                     content.append({
                         "type": "image_url",
                         "image_url": {"url": prepared_url}

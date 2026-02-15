@@ -25,6 +25,7 @@ import {
 } from '../constants/avatarOptions'
 import { resolveMediaUrl } from '../utils/mediaUrl'
 import { encodeMomentCommentContent } from '../utils/commentMedia'
+import { extractErrorMessage } from '../utils/errorMessage'
 import ThemeSwitcher from '../components/layout/ThemeSwitcher'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -288,7 +289,7 @@ const TimelinePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Upload comment image failed:', error)
-      alert('评论图片上传失败，请稍后再试')
+      alert(`评论图片上传失败：${extractErrorMessage(error, '请稍后再试')}`)
     } finally {
       setCommentImageUploading(false)
       commentInputRef.current?.focus()

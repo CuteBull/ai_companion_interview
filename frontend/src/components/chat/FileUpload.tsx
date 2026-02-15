@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { uploadFile } from '../../services/api'
 import { CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 interface FileUploadProps {
   onUpload: (urls: string[]) => void
@@ -27,6 +28,7 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(({ onUpload }, 
     onDrop: async (acceptedFiles) => {
       setIsUploading(true)
       const urls: string[] = []
+      const failures: string[] = []
 
       for (const file of acceptedFiles) {
         try {
@@ -34,7 +36,12 @@ const FileUpload = forwardRef<FileUploadHandle, FileUploadProps>(({ onUpload }, 
           urls.push(result.url)
         } catch (error) {
           console.error('Upload failed:', error)
+          failures.push(`${file.name}: ${extractErrorMessage(error, '上传失败')}`)
         }
+      }
+
+      if (failures.length > 0) {
+        alert(`部分文件上传失败：\n${failures.join('\n')}`)
       }
 
       onUpload(urls)
