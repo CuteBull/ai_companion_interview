@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class ChatRequest(BaseModel):
@@ -29,3 +29,9 @@ class ClearSessionsResponse(BaseModel):
     deleted_sessions: int
     deleted_messages: int
     detached_moments: int
+
+
+class SessionToMomentRequest(BaseModel):
+    author_name: Optional[str] = Field(default="你", max_length=40)
+    author_avatar_url: Optional[str] = Field(default=None, max_length=512)
+    location: Optional[str] = Field(default=None, max_length=120)

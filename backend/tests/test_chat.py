@@ -86,6 +86,59 @@ def test_session_messages_endpoint(test_db):
     assert len(data["messages"]) == 1
     assert data["messages"][0]["content"] == "Test message"
 
+
+def test_create_moment_from_history_session(test_db):
+    """测试从历史对话一键生成朋友圈"""
+    session = SessionModel(title="晚安前聊聊")
+    test_db.add(session)
+    test_db.commit()
+
+    test_db.add_all([
+        MessageModel(
+            session_id=session.id,
+            role="user",
+            content="我今天有点累",
+            image_urls=["https://example.com/m1.jpg"],
+        ),
+        MessageModel(
+            session_id=session.id,
+            role="assistant",
+            content="抱抱你，辛苦了。",
+        ),
+        MessageModel(
+            session_id=session.id,
+            role="user",
+            content="但和你聊完轻松很多",
+            image_urls=["https://example.com/m1.jpg", "https://example.com/m2.jpg"],
+        ),
+        MessageModel(
+            session_id=session.id,
+            role="user",
+            content="准备早点睡啦",
+        ),
+    ])
+    test_db.commit()
+
+    response = client.post(
+        f"/api/sessions/{session.id}/moment",
+        json={
+            "author_name": "你",
+            "author_avatar_url": "/assistant-avatar.svg",
+            "location": "上海",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["session_id"] == session.id
+    assert data["content"] == "我今天有点累\n但和你聊完轻松很多\n准备早点睡啦"
+    assert data["image_urls"] == ["https://example.com/m1.jpg", "https://example.com/m2.jpg"]
+    assert data["location"] == "上海"
+    assert data["like_count"] == 0
+    assert data["comment_count"] == 0
+    assert data["likes"] == []
+    assert data["comments"] == []
+
 def test_upload_endpoint():
     """测试文件上传端点（模拟）"""
     # 注意：实际测试需要模拟文件上传

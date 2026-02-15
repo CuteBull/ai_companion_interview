@@ -48,6 +48,17 @@ export interface SessionMessages {
   messages: Message[]
 }
 
+export interface SessionToMomentRequest {
+  author_name?: string
+  author_avatar_url?: string
+  location?: string
+}
+
+export interface SessionToMomentResponse {
+  id: string
+  session_id?: string | null
+}
+
 // 流式聊天
 export const streamChat = async (
   request: ChatRequest,
@@ -158,5 +169,14 @@ export const getSessionMessages = async (sessionId: string): Promise<SessionMess
 // 清空历史对话
 export const clearSessions = async (): Promise<ClearSessionsResponse> => {
   const response = await api.delete('/api/sessions')
+  return response.data
+}
+
+// 从历史对话生成朋友圈
+export const createMomentFromSession = async (
+  sessionId: string,
+  payload: SessionToMomentRequest = {}
+): Promise<SessionToMomentResponse> => {
+  const response = await api.post(`/api/sessions/${sessionId}/moment`, payload)
   return response.data
 }

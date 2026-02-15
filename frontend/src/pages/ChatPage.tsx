@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { ClockIcon, PlusIcon, ArrowPathIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
 import ChatInterface from '../components/chat/ChatInterface'
-import { Session, clearSessions, getSessions } from '../services/chatService'
+import { Session, clearSessions, createMomentFromSession, getSessions } from '../services/chatService'
 import { useTheme } from '../contexts/ThemeContext'
+import { extractErrorMessage } from '../utils/errorMessage'
+import { DEFAULT_AVATAR_URL, TIMELINE_AVATAR_STORAGE_KEY } from '../constants/avatarOptions'
 
 const ChatPage: React.FC = () => {
   const { theme } = useTheme()
@@ -17,6 +19,7 @@ const ChatPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(false)
   const [clearingHistory, setClearingHistory] = useState(false)
+  const [creatingMomentSessionId, setCreatingMomentSessionId] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string>()
   const [chatResetVersion, setChatResetVersion] = useState(0)
 
@@ -114,6 +117,38 @@ const ChatPage: React.FC = () => {
       setClearingHistory(false)
     }
   }, [clearingHistory, loadingSessions, updateSessionInUrl])
+
+  const handleCreateMomentFromHistory = useCallback(async (targetSession: Session) => {
+    if (creatingMomentSessionId) return
+
+    const sessionLabel = targetSession.title || `对话 ${targetSession.id.slice(0, 8)}`
+    const confirmed = window.confirm(`确认把「${sessionLabel}」直接生成到朋友圈吗？`)
+    if (!confirmed) return
+
+    setCreatingMomentSessionId(targetSession.id)
+    setSessionError(undefined)
+
+    try {
+      const savedAvatar = (localStorage.getItem(TIMELINE_AVATAR_STORAGE_KEY) || '').trim()
+      const avatarUrl = savedAvatar || DEFAULT_AVATAR_URL
+
+      await createMomentFromSession(targetSession.id, {
+        author_name: '你',
+        author_avatar_url: avatarUrl,
+      })
+
+      setShowHistory(false)
+      navigate('/timeline')
+      window.setTimeout(() => {
+        alert('已从历史对话生成朋友圈动态')
+      }, 60)
+    } catch (error) {
+      console.error('Failed to create moment from history session:', error)
+      alert(`生成朋友圈失败：${extractErrorMessage(error, '请稍后重试')}`)
+    } finally {
+      setCreatingMomentSessionId(null)
+    }
+  }, [creatingMomentSessionId, navigate])
 
   const formatSessionTime = (value: string) => {
     const date = new Date(value)
@@ -251,28 +286,51 @@ const ChatPage: React.FC = () => {
                   {sessions.map((session) => {
                     const active = session.id === sessionId
                     return (
-                      <button
+                      <div
                         key={session.id}
-                        type="button"
-                        onClick={() => handleSelectSession(session.id)}
-                        className={`w-full rounded-lg border px-3 py-2.5 text-left transition ${
+                        className={`rounded-lg border transition ${
                           active
                             ? isDarkMode
                               ? 'border-teal-600 bg-teal-900/30'
                               : 'border-teal-400 bg-teal-50'
                             : isDarkMode
-                              ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800'
-                              : 'border-stone-200 bg-white hover:bg-stone-50'
+                              ? 'border-zinc-700 bg-zinc-900'
+                              : 'border-stone-200 bg-white'
                         }`}
                       >
-                        <div className={`truncate text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>
-                          {session.title || `对话 ${session.id.slice(0, 8)}`}
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSession(session.id)}
+                          className={`w-full px-3 pb-2 pt-2.5 text-left transition ${
+                            isDarkMode ? 'hover:bg-zinc-800/55' : 'hover:bg-stone-50'
+                          }`}
+                        >
+                          <div className={`truncate text-sm font-medium ${isDarkMode ? 'text-zinc-100' : 'text-stone-900'}`}>
+                            {session.title || `对话 ${session.id.slice(0, 8)}`}
+                          </div>
+                          <div className={`mt-1 flex items-center justify-between text-xs ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
+                            <span>{formatSessionTime(session.created_at)}</span>
+                            <span>{session.message_count} 条消息</span>
+                          </div>
+                        </button>
+                        <div className={`flex items-center justify-end border-t px-3 pb-2 pt-1.5 ${
+                          isDarkMode ? 'border-zinc-800' : 'border-stone-200'
+                        }`}>
+                          <button
+                            type="button"
+                            onClick={() => handleCreateMomentFromHistory(session)}
+                            disabled={Boolean(creatingMomentSessionId) || clearingHistory}
+                            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-55 ${
+                              isDarkMode
+                                ? 'text-teal-200 hover:bg-teal-900/40'
+                                : 'text-teal-700 hover:bg-teal-100'
+                            }`}
+                          >
+                            <PlusIcon className="h-3.5 w-3.5" />
+                            {creatingMomentSessionId === session.id ? '生成中...' : '生成朋友圈'}
+                          </button>
                         </div>
-                        <div className={`mt-1 flex items-center justify-between text-xs ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>
-                          <span>{formatSessionTime(session.created_at)}</span>
-                          <span>{session.message_count} 条消息</span>
-                        </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
