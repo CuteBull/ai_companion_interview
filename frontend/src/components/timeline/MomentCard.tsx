@@ -201,7 +201,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
               </button>
 
               {showActionMenu && (
-                <div className={`absolute bottom-12 right-0 z-50 flex overflow-hidden rounded-xl border shadow-2xl backdrop-blur ${
+                <div className={`absolute bottom-12 right-0 z-50 flex w-max items-center overflow-hidden rounded-xl border shadow-2xl backdrop-blur ${
                   isDarkMode
                     ? 'border-zinc-700 bg-zinc-800/95'
                     : 'border-stone-300 bg-white/95'
@@ -213,41 +213,41 @@ const MomentCard: React.FC<MomentCardProps> = ({
                       setShowActionMenu(false)
                     }}
                     disabled={likeLoading}
-                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm transition disabled:opacity-50 ${
+                    className={`inline-flex h-9 shrink-0 items-center gap-1 px-3 text-[15px] leading-none whitespace-nowrap transition disabled:opacity-50 ${
                       isDarkMode ? 'text-zinc-100 hover:bg-zinc-700' : 'text-stone-800 hover:bg-stone-100'
                     } ${moment.liked_by_me ? 'text-rose-400' : ''}`}
                   >
-                    {moment.liked_by_me ? <HeartSolidIcon className="h-5 w-5" /> : <HeartIcon className="h-5 w-5" />}
+                    {moment.liked_by_me ? <HeartSolidIcon className="h-4.5 w-4.5" /> : <HeartIcon className="h-4.5 w-4.5" />}
                     赞
                   </button>
-                  <span className={`my-2 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
+                  <span className={`my-1.5 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
                   <button
                     type="button"
                     onClick={() => {
                       onRequestComment(moment.id)
                       setShowActionMenu(false)
                     }}
-                    className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm transition ${
+                    className={`inline-flex h-9 shrink-0 items-center gap-1 px-3 text-[15px] leading-none whitespace-nowrap transition ${
                       isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-stone-100'
                     } ${
                       commentActive ? (isDarkMode ? 'text-sky-300' : 'text-sky-600') : (isDarkMode ? 'text-zinc-100' : 'text-stone-800')
                     }`}
                   >
-                    <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5" />
+                    <ChatBubbleOvalLeftEllipsisIcon className="h-4.5 w-4.5" />
                     评论
                   </button>
                   {moment.author_name === '你' && (
                     <>
-                      <span className={`my-2 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
+                      <span className={`my-1.5 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
                       <button
                         type="button"
                         onClick={handleDelete}
                         disabled={deleteLoading}
-                        className={`inline-flex h-11 items-center gap-1.5 px-4 text-sm text-rose-400 transition disabled:opacity-50 ${
+                        className={`inline-flex h-9 shrink-0 items-center gap-1 px-3 text-[15px] leading-none whitespace-nowrap text-rose-400 transition disabled:opacity-50 ${
                           isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-rose-50'
                         }`}
                       >
-                        <TrashIcon className="h-5 w-5" />
+                        <TrashIcon className="h-4.5 w-4.5" />
                         删除
                       </button>
                     </>
