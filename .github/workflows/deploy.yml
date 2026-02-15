@@ -10,22 +10,15 @@ jobs:
   trigger-platform-deploy:
     runs-on: ubuntu-latest
     if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main')
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main')) &&
+      (secrets.VERCEL_DEPLOY_HOOK_URL != '' || secrets.RENDER_DEPLOY_HOOK_URL != '')
     env:
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
     steps:
-      - name: Validate deploy hooks
-        run: |
-          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ] && [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "Both deploy hooks are missing. Please set at least one secret:"
-            echo "VERCEL_DEPLOY_HOOK_URL / RENDER_DEPLOY_HOOK_URL"
-            exit 1
-          fi
-
       - name: Trigger Vercel deploy
         if: ${{ env.VERCEL_DEPLOY_HOOK_URL != '' }}
         run: |
