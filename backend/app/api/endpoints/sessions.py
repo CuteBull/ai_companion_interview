@@ -76,27 +76,19 @@ def _to_utc_iso(value: datetime) -> str:
 
 
 def _build_moment_content(messages: list[MessageModel], fallback_title: str | None) -> str:
-    # 优先提取用户最近的表达，避免把整段聊天原样塞进朋友圈。
-    user_texts: list[str] = []
+    # 同时提取“你”和“AI陪伴助手”的最近对话，让朋友圈内容更完整。
+    dialog_lines: list[str] = []
     for msg in messages:
-        if msg.role != "user":
-            continue
         text = " ".join((msg.content or "").strip().split())
-        if text:
-            user_texts.append(text)
-
-    selected: list[str] = []
-    seen: set[str] = set()
-    for text in reversed(user_texts):
-        if text in seen:
+        if not text:
             continue
-        selected.append(text)
-        seen.add(text)
-        if len(selected) >= 3:
-            break
-    selected.reverse()
 
-    if selected:
+        role_label = "你" if msg.role == "user" else "AI陪伴助手"
+        compact_text = text[:240]
+        dialog_lines.append(f"{role_label}：{compact_text}")
+
+    if dialog_lines:
+        selected = dialog_lines[-6:]  # 保留最近 6 句（约 3 轮对话）
         content = "\n".join(selected)
     else:
         content = (fallback_title or "").strip() or "记录一段对话心情"
