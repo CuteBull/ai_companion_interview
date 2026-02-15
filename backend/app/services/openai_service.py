@@ -84,9 +84,9 @@ class OpenAIService:
             return self._fallback_moment_copy(normalized_user, normalized_assistant, fallback_title)
 
         system_prompt = (
-            "你是中文朋友圈文案助手。请把“陪伴助手回复”归纳为一段用户愿意发朋友圈的文案。"
+            "你是中文朋友圈文案助手。请把“用户表达 + 陪伴助手回复”整合为一段用户愿意发朋友圈的心情小记。"
             "要求：1-2句话，20-80字，语气自然温柔、偏第一人称；"
-            "不重复用户原话；只输出文案本身；不要标题、列表、markdown、引号、角色前缀。"
+            "不要直接照抄用户原话；只输出文案本身；不要标题、列表、markdown、引号、角色前缀。"
         )
         assistant_block = "\n".join(
             f"回复{i + 1}: {text[:320]}"
