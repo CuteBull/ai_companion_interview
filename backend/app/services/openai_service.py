@@ -34,9 +34,14 @@ class OpenAIService:
         cleaned = re.sub(r"^\s*(今日文案|朋友圈文案|文案)\s*[:：]\s*", "", cleaned)
         cleaned = re.sub(r"(?m)^\s*[>#\-*]+\s*", "", cleaned)
         cleaned = re.sub(r"(?m)^\s*(你|用户|AI陪伴助手|助手)\s*[:：]\s*", "", cleaned)
+        cleaned = cleaned.replace("**", "").replace("__", "").strip()
+        cleaned = cleaned.replace("\n", "")
         cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
         cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
-        return cleaned.strip()[:220]
+        cleaned = cleaned.strip()
+        if len(cleaned) > 96:
+            cleaned = cleaned[:96].rstrip("，,；;。.!！？?") + "。"
+        return cleaned
 
     def _fallback_moment_copy(
         self,
@@ -52,7 +57,7 @@ class OpenAIService:
         merged_context = f"{user_context} {context}".strip()
 
         if any(k in merged_context for k in ["宝宝", "孩子", "绿便", "拉绿", "便便"]):
-            return "被宝宝的小状况吓了一跳，先别慌，慢慢观察。愿今晚都能安心一点，日子依旧温柔🍼"
+            return "宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼"
 
         if any(k in merged_context for k in ["心情不好", "难过", "焦虑", "压力", "烦", "委屈"]):
             return "今天心里有点重，但说出来就轻了一些。慢慢来，愿我们都被温柔接住✨"
@@ -63,6 +68,49 @@ class OpenAIService:
             seed = f"{seed[:36]}…"
 
         return f"{seed}。把心事写下来，日子也会一点点变轻🌿"
+
+    def _is_overly_formal_moment_copy(self, text: str) -> bool:
+        normalized = (text or "").strip()
+        if not normalized:
+            return True
+        formal_keywords = [
+            "可能是", "正常现象", "建议", "需要", "应当", "如果", "观察", "方式",
+            "原因", "解决", "方法", "首先", "其次", "可以", "注意",
+        ]
+        hit_count = sum(1 for key in formal_keywords if key in normalized)
+        return hit_count >= 2 or len(normalized) > 86
+
+    async def _soften_moment_copy(
+        self,
+        draft_text: str,
+        user_text: str
+    ) -> str:
+        """将偏说明/科普口吻改为可发朋友圈的心情小记。"""
+        system_prompt = (
+            "你是中文朋友圈文案润色助手。"
+            "请把输入文案改写成更像微信朋友圈的语气：简短、有人味、偏第一人称。"
+            "要求：1-2句，18-56字；可用0-1个emoji；"
+            "不要科普口吻，不要建议清单，不要“可能是/建议/需要/观察/方式/原因/解决方法”这类表达。"
+            "仅输出改写结果，不要解释。"
+        )
+        user_prompt = (
+            f"用户原话：{user_text[:220]}\n"
+            f"待润色文案：{draft_text[:220]}"
+        )
+        try:
+            response = await self.chat_client.chat.completions.create(
+                model=self.deployment,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.7,
+                max_tokens=90,
+            )
+            return self._sanitize_moment_copy(response.choices[0].message.content or "")
+        except Exception as exc:
+            logger.warning("Soften moment copy failed: %s", exc)
+            return ""
 
     async def generate_moment_copy(
         self,
@@ -84,9 +132,14 @@ class OpenAIService:
             return self._fallback_moment_copy(normalized_user, normalized_assistant, fallback_title)
 
         system_prompt = (
-            "你是中文朋友圈文案助手。请把“用户表达 + 陪伴助手回复”整合为一段用户愿意发朋友圈的心情小记。"
-            "要求：1-2句话，20-80字，语气自然温柔、偏第一人称；"
-            "不要直接照抄用户原话；只输出文案本身；不要标题、列表、markdown、引号、角色前缀。"
+            "你是中文朋友圈文案助手。把“用户表达 + 陪伴助手回复”整合成一条可直接发朋友圈的心情小记。\n"
+            "风格要求：像日常分享，不像科普说明；自然、有温度、偏第一人称。\n"
+            "格式要求：1-2句，18-56字，可用0-1个emoji，只输出最终文案。\n"
+            "禁止：标题、列表、markdown、引号、角色前缀；"
+            "禁止出现“可能是/建议/需要/观察/方式/原因/解决方法/如果…则…”等说明体表达。\n"
+            "参考风格示例：\n"
+            "示例1：宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼\n"
+            "示例2：今天心里有点乱，但被好好接住了，慢慢来也没关系✨"
         )
         assistant_block = "\n".join(
             f"回复{i + 1}: {text[:320]}"
@@ -107,6 +160,11 @@ class OpenAIService:
             content = (response.choices[0].message.content or "").strip()
             sanitized = self._sanitize_moment_copy(content)
             if sanitized:
+                if self._is_overly_formal_moment_copy(sanitized):
+                    softened = await self._soften_moment_copy(sanitized, normalized_user)
+                    if softened and not self._is_overly_formal_moment_copy(softened):
+                        return softened
+                    return self._fallback_moment_copy(normalized_user, normalized_assistant, fallback_title)
                 return sanitized
         except Exception as exc:
             logger.warning("Generate moment copy failed, fallback enabled: %s", exc)

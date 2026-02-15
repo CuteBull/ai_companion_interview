@@ -254,6 +254,18 @@ def test_file_service_extract_upload_result_raises_on_missing_fields():
     with pytest.raises(ValueError):
         service._extract_upload_result({"secure_url": "https://example.com/no-id.jpg"})
 
+
+def test_openai_service_detects_formal_moment_copy():
+    """说明体文案应被识别为需二次润色"""
+    formal = "宝宝拉了绿色便便，可能是正常现象。建议先观察并调整喂养方式。"
+    assert openai_service._is_overly_formal_moment_copy(formal) is True
+
+
+def test_openai_service_accepts_natural_moment_copy():
+    """朋友圈口吻文案不应被误判为说明体"""
+    natural = "宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼"
+    assert openai_service._is_overly_formal_moment_copy(natural) is False
+
 def test_openai_service_prepare_image_url_for_local_upload(tmp_path, monkeypatch):
     """测试本地上传图片URL会被转换为data URL"""
     monkeypatch.setattr(settings, "LOCAL_UPLOAD_DIR", str(tmp_path))
