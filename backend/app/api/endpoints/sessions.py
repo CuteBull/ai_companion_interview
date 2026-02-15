@@ -6,11 +6,11 @@ from urllib.parse import urlparse, unquote
 from app.core.database import get_db
 from app.core.config import settings
 from app.schemas.chat import SessionsResponse, ClearSessionsResponse, SessionToMomentRequest
-from app.schemas.moment import MomentResponse
+from app.schemas.moment import MomentCommentResponse, MomentResponse
 from app.services.chat_service import ChatService
 from app.services.openai_service import openai_service
 from app.models.message import Message as MessageModel
-from app.models.moment import Moment as MomentModel
+from app.models.moment import Moment as MomentModel, MomentComment as MomentCommentModel
 from app.models.session import Session as SessionModel
 
 router = APIRouter()
@@ -206,12 +206,9 @@ async def create_moment_from_session(
     )
 
     if user_content:
-        if summary_copy and len(user_content) + 2 + len(summary_copy) <= 2000:
-            content = f"{user_content}\n\n{summary_copy}"
-        else:
-            content = user_content
+        content = user_content
     else:
-        content = summary_copy or _fallback_moment_content(messages, session.title)
+        content = _fallback_moment_content(messages, session.title)
 
     content = content[:2000]
     image_urls = _collect_moment_images(messages)
@@ -230,6 +227,29 @@ async def create_moment_from_session(
     db.commit()
     db.refresh(moment)
 
+    comments: list[MomentCommentResponse] = []
+    summary_copy = (summary_copy or "").strip()
+    if summary_copy:
+        ai_comment = MomentCommentModel(
+            moment_id=moment.id,
+            user_name="AI陪伴助手",
+            content=summary_copy[:1000],
+        )
+        db.add(ai_comment)
+        db.commit()
+        db.refresh(ai_comment)
+        comments.append(
+            MomentCommentResponse(
+                id=ai_comment.id,
+                moment_id=ai_comment.moment_id,
+                parent_id=ai_comment.parent_id,
+                user_name=ai_comment.user_name,
+                reply_to_name=ai_comment.reply_to_name,
+                content=ai_comment.content,
+                created_at=_to_utc_iso(ai_comment.created_at),
+            )
+        )
+
     return MomentResponse(
         id=moment.id,
         author_name=moment.author_name,
@@ -240,8 +260,8 @@ async def create_moment_from_session(
         session_id=moment.session_id,
         created_at=_to_utc_iso(moment.created_at),
         like_count=0,
-        comment_count=0,
+        comment_count=len(comments),
         likes=[],
         liked_by_me=False,
-        comments=[],
+        comments=comments,
     )
