@@ -14,6 +14,7 @@ if (API_KEY) {
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: defaultHeaders,
+  timeout: 15000,
 })
 
 export interface UploadResponse {

@@ -42,6 +42,7 @@ const TimelinePage: React.FC = () => {
   const isDarkMode = theme === 'dark'
   const [moments, setMoments] = useState<Moment[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [showPublisher, setShowPublisher] = useState(false)
   const [pendingLikeMomentId, setPendingLikeMomentId] = useState<string | null>(null)
@@ -60,6 +61,10 @@ const TimelinePage: React.FC = () => {
   const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   const loadMoments = async (pageNum: number) => {
+    if (pageNum === 1) {
+      setLoading(true)
+    }
+    setLoadError(null)
     try {
       const response = await getMoments(pageNum)
       if (pageNum === 1) {
@@ -70,6 +75,9 @@ const TimelinePage: React.FC = () => {
       setHasMore(response.has_more)
     } catch (error) {
       console.error('Failed to load moments:', error)
+      if (pageNum === 1) {
+        setLoadError(`加载失败：${extractErrorMessage(error, '请稍后重试')}`)
+      }
     } finally {
       setLoading(false)
     }
@@ -409,6 +417,25 @@ const TimelinePage: React.FC = () => {
             <div className={`h-10 w-10 animate-spin rounded-full border-2 ${
               isDarkMode ? 'border-zinc-700 border-t-zinc-200' : 'border-stone-300 border-t-teal-600'
             }`} />
+          </div>
+        ) : loadError && moments.length === 0 ? (
+          <div className={`fade-rise rounded-3xl border px-4 py-12 text-center shadow-xl ${
+            isDarkMode
+              ? 'border-zinc-800 bg-zinc-900/72 text-zinc-300 shadow-black/30'
+              : 'border-white/70 bg-white/84 text-stone-600 shadow-stone-400/20'
+          }`}>
+            <div className={`text-base font-medium ${isDarkMode ? 'text-zinc-200' : 'text-stone-800'}`}>{loadError}</div>
+            <button
+              type="button"
+              onClick={() => loadMoments(1)}
+              className={`mt-4 rounded-full border px-5 py-2 text-sm transition ${
+                isDarkMode
+                  ? 'border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-100'
+              }`}
+            >
+              重新加载
+            </button>
           </div>
         ) : (
           <>
