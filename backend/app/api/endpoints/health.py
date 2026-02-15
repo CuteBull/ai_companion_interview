@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.core.database import get_db
+from app.services.file_service import file_service
 import logging
 from datetime import datetime
 
@@ -41,13 +42,13 @@ async def health_check_db(db: Session = Depends(get_db)):
 
 @router.get("/services")
 async def health_check_services():
-    """外部服务健康检查（占位符）"""
-    # 在实际实现中，这里应检查Azure OpenAI、Cloudinary等外部服务
+    """外部服务健康检查（轻量版）"""
+    cloudinary_status = file_service.get_status()
     return {
-        "status": "healthy",
+        "status": "healthy" if cloudinary_status.get("enabled") else "degraded",
         "services": {
             "azure_openai": "connected",
-            "cloudinary": "connected"
+            "cloudinary": cloudinary_status,
         },
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }

@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 import os
 
 class Settings(BaseSettings):
@@ -15,9 +15,10 @@ class Settings(BaseSettings):
     AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT: str = "gpt-4o-transcribe"
 
     # Cloudinary
-    CLOUDINARY_CLOUD_NAME: str
-    CLOUDINARY_API_KEY: str
-    CLOUDINARY_API_SECRET: str
+    CLOUDINARY_URL: Optional[str] = None
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
     LOCAL_UPLOAD_DIR: str = "./uploads"
     ALLOW_LOCAL_UPLOAD_FALLBACK: bool = True
 
