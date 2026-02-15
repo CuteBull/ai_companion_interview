@@ -6,11 +6,11 @@ from urllib.parse import urlparse, unquote
 from app.core.database import get_db
 from app.core.config import settings
 from app.schemas.chat import SessionsResponse, ClearSessionsResponse, SessionToMomentRequest
-from app.schemas.moment import MomentCommentResponse, MomentResponse
+from app.schemas.moment import MomentResponse
 from app.services.chat_service import ChatService
 from app.services.openai_service import openai_service
 from app.models.message import Message as MessageModel
-from app.models.moment import Moment as MomentModel, MomentComment as MomentCommentModel
+from app.models.moment import Moment as MomentModel
 from app.models.session import Session as SessionModel
 
 router = APIRouter()
@@ -76,34 +76,37 @@ def _to_utc_iso(value: datetime) -> str:
     return value.isoformat().replace("+00:00", "Z")
 
 
-def _build_moment_content(messages: list[MessageModel], fallback_title: str | None) -> str:
-    # 兜底文案（正常流程会由模型生成）。
-    user_lines: list[str] = []
-    for msg in messages:
-        if msg.role == "user":
-            text = " ".join((msg.content or "").strip().split())
-            if text:
-                user_lines.append(text[:120])
-
-    if user_lines:
-        seed = user_lines[-1].replace("怎么办", "慢慢来").strip("？?。")
-        return f"{seed}。把心事写下来，日子也会一点点变轻🌿"
-
+def _fallback_moment_content(messages: list[MessageModel], fallback_title: str | None) -> str:
+    # 兜底正文：优先保留用户原文。
+    user_raw_contents = _collect_user_raw_contents(messages)
+    if user_raw_contents:
+        return "\n".join(user_raw_contents)
     return (fallback_title or "").strip() or "记录一段对话心情"
 
 
-def _collect_assistant_reply_comments(messages: list[MessageModel]) -> list[str]:
-    # 将 AI 最近回复落到评论区，不带“AI陪伴助手：”文本前缀。
-    comments: list[str] = []
+def _collect_user_raw_contents(messages: list[MessageModel]) -> list[str]:
+    # 保留用户原文（仅过滤空白消息，不改写内容本体）
+    user_contents: list[str] = []
+    for msg in messages:
+        if msg.role != "user":
+            continue
+        raw = msg.content or ""
+        if not raw.strip():
+            continue
+        user_contents.append(raw.rstrip())
+    return user_contents
+
+
+def _collect_assistant_contents(messages: list[MessageModel]) -> list[str]:
+    assistant_contents: list[str] = []
     for msg in messages:
         if msg.role != "assistant":
             continue
-        text = " ".join((msg.content or "").strip().split())
-        if not text:
+        text = msg.content or ""
+        if not text.strip():
             continue
-        comments.append(text[:1000])
-
-    return comments[-6:]
+        assistant_contents.append(text)
+    return assistant_contents
 
 
 def _collect_moment_images(messages: list[MessageModel]) -> list[str]:
@@ -193,15 +196,25 @@ async def create_moment_from_session(
     if not messages:
         raise HTTPException(status_code=400, detail="该对话暂无可生成的内容")
 
-    generation_messages = [
-        {"role": msg.role, "content": msg.content}
-        for msg in messages
-    ]
-    content = await openai_service.generate_moment_copy(generation_messages, session.title)
-    if not content:
-        content = _build_moment_content(messages, session.title)
+    user_raw_contents = _collect_user_raw_contents(messages)
+    user_content = "\n".join(user_raw_contents)
+    assistant_contents = _collect_assistant_contents(messages)
+    summary_copy = await openai_service.generate_moment_copy(
+        user_text=user_content,
+        assistant_texts=assistant_contents,
+        fallback_title=session.title,
+    )
+
+    if user_content:
+        if summary_copy and len(user_content) + 2 + len(summary_copy) <= 2000:
+            content = f"{user_content}\n\n{summary_copy}"
+        else:
+            content = user_content
+    else:
+        content = summary_copy or _fallback_moment_content(messages, session.title)
+
+    content = content[:2000]
     image_urls = _collect_moment_images(messages)
-    assistant_comments = _collect_assistant_reply_comments(messages)
     if not content and not image_urls:
         raise HTTPException(status_code=400, detail="该对话暂无可生成的内容")
 
@@ -214,26 +227,8 @@ async def create_moment_from_session(
         session_id=session_id,
     )
     db.add(moment)
-    db.flush()
-
-    for comment_text in assistant_comments:
-        db.add(
-            MomentCommentModel(
-                moment_id=moment.id,
-                user_name="AI陪伴助手",
-                content=comment_text,
-            )
-        )
-
     db.commit()
     db.refresh(moment)
-
-    created_comments = (
-        db.query(MomentCommentModel)
-        .filter(MomentCommentModel.moment_id == moment.id)
-        .order_by(MomentCommentModel.created_at.asc())
-        .all()
-    )
 
     return MomentResponse(
         id=moment.id,
@@ -245,19 +240,8 @@ async def create_moment_from_session(
         session_id=moment.session_id,
         created_at=_to_utc_iso(moment.created_at),
         like_count=0,
-        comment_count=len(created_comments),
+        comment_count=0,
         likes=[],
         liked_by_me=False,
-        comments=[
-            MomentCommentResponse(
-                id=item.id,
-                moment_id=item.moment_id,
-                parent_id=item.parent_id,
-                user_name=item.user_name,
-                reply_to_name=item.reply_to_name,
-                content=item.content,
-                created_at=_to_utc_iso(item.created_at),
-            )
-            for item in created_comments
-        ],
+        comments=[],
     )
