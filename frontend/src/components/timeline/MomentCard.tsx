@@ -118,6 +118,19 @@ const MomentCard: React.FC<MomentCardProps> = ({
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
+  useEffect(() => {
+    if (previewIndex === null) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPreviewIndex(null)
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [previewIndex])
+
   const authorAvatar = moment.author_name === '你'
     ? resolveMediaUrl(currentUserAvatar || '/user-avatar.svg')
     : moment.author_name === 'AI陪伴助手'
@@ -360,8 +373,8 @@ const MomentCard: React.FC<MomentCardProps> = ({
           <img
             src={resolveMediaUrl(moment.image_urls[previewIndex])}
             alt="预览大图"
-            className="max-h-[90vh] max-w-full object-contain"
-            onClick={(event) => event.stopPropagation()}
+            className="max-h-[90vh] max-w-full cursor-zoom-out object-contain"
+            onClick={() => setPreviewIndex(null)}
           />
         </div>
       )}
