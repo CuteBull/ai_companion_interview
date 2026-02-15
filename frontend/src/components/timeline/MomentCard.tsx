@@ -228,9 +228,13 @@ const MomentCard: React.FC<MomentCardProps> = ({
                     disabled={likeLoading}
                     className={`inline-flex h-9 shrink-0 items-center gap-1 px-3 text-[15px] leading-none whitespace-nowrap transition disabled:opacity-50 ${
                       isDarkMode ? 'text-zinc-100 hover:bg-zinc-700' : 'text-stone-800 hover:bg-stone-100'
-                    } ${moment.liked_by_me ? 'text-rose-400' : ''}`}
+                    }`}
                   >
-                    {moment.liked_by_me ? <HeartSolidIcon className="h-4 w-4 shrink-0" /> : <HeartIcon className="h-4 w-4 shrink-0" />}
+                    {moment.liked_by_me ? (
+                      <HeartSolidIcon className="h-4 w-4 shrink-0 text-rose-500" />
+                    ) : (
+                      <HeartIcon className="h-4 w-4 shrink-0" />
+                    )}
                     赞
                   </button>
                   <span className={`my-1.5 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
@@ -282,7 +286,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
                     ? (isDarkMode ? 'border-b border-zinc-700 pb-2' : 'border-b border-stone-300 pb-2')
                     : ''
                 }`}>
-                  <HeartIcon className={`mt-0.5 h-4 w-4 shrink-0 ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} />
+                  <HeartIcon className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                   <span className="leading-6">{moment.likes.join('，')}</span>
                 </div>
               )}
