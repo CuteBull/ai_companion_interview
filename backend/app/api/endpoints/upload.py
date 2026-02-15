@@ -15,6 +15,27 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def _cloudinary_failure_hint(exc: Exception) -> str:
+    message = str(exc).strip().lower()
+    config_error = (file_service.get_status().get("error") or "").strip()
+
+    if config_error:
+        return config_error
+
+    if any(keyword in message for keyword in ("unknown api key", "invalid signature", "unauthorized", "401")):
+        return "Cloudinary 鉴权失败，请核对 API Key 和 API Secret"
+    if "cloud name" in message or "unknown cloud" in message:
+        return "Cloud name 无效，请核对 CLOUDINARY_CLOUD_NAME"
+    if any(keyword in message for keyword in ("timed out", "timeout", "connection", "dns")):
+        return "Cloudinary 网络连接失败，请稍后重试"
+    if "must supply api_key" in message or "api_key" in message and "missing" in message:
+        return "缺少 Cloudinary API Key"
+    if "must supply api_secret" in message or "api_secret" in message and "missing" in message:
+        return "缺少 Cloudinary API Secret"
+
+    return "Cloudinary 上传请求失败"
+
+
 def _save_local_upload(
     request: Request,
     content: bytes,
@@ -96,7 +117,7 @@ async def upload_file(
                 if not settings.ALLOW_LOCAL_UPLOAD_FALLBACK:
                     raise HTTPException(
                         status_code=503,
-                        detail="图片存储服务不可用，请检查 Cloudinary 配置后重试",
+                        detail=f"图片存储服务不可用：{_cloudinary_failure_hint(exc)}。请检查 Cloudinary 配置后重试",
                     )
                 url, public_id, file_format = _save_local_upload(
                     request=request,
@@ -116,7 +137,7 @@ async def upload_file(
                 if not settings.ALLOW_LOCAL_UPLOAD_FALLBACK:
                     raise HTTPException(
                         status_code=503,
-                        detail="音频存储服务不可用，请检查 Cloudinary 配置后重试",
+                        detail=f"音频存储服务不可用：{_cloudinary_failure_hint(exc)}。请检查 Cloudinary 配置后重试",
                     )
                 url, public_id, file_format = _save_local_upload(
                     request=request,

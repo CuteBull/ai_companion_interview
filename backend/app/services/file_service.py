@@ -11,6 +11,28 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _normalize_env_value(value: Optional[str]) -> str:
+    if not value:
+        return ""
+
+    normalized = value.strip()
+    if (normalized.startswith('"') and normalized.endswith('"')) or (
+        normalized.startswith("'") and normalized.endswith("'")
+    ):
+        normalized = normalized[1:-1].strip()
+
+    # 兼容把整行 "CLOUDINARY_URL=..." 粘贴到 value 的情况
+    if normalized.upper().startswith("CLOUDINARY_URL="):
+        normalized = normalized.split("=", 1)[1].strip()
+
+    return normalized
+
+
+def _is_placeholder(value: str) -> bool:
+    lowered = value.lower()
+    return "<your_" in lowered or "your_api_" in lowered or "<cloud_name>" in lowered
+
+
 class FileService:
     def __init__(self):
         self.enabled = False
@@ -19,13 +41,27 @@ class FileService:
         self._configure()
 
     def _configure(self):
-        cloudinary_url_env = (settings.CLOUDINARY_URL or "").strip()
-        cloud_name = (settings.CLOUDINARY_CLOUD_NAME or "").strip()
-        api_key = (settings.CLOUDINARY_API_KEY or "").strip()
-        api_secret = (settings.CLOUDINARY_API_SECRET or "").strip()
+        cloudinary_url_env = _normalize_env_value(settings.CLOUDINARY_URL)
+        cloud_name = _normalize_env_value(settings.CLOUDINARY_CLOUD_NAME)
+        api_key = _normalize_env_value(settings.CLOUDINARY_API_KEY)
+        api_secret = _normalize_env_value(settings.CLOUDINARY_API_SECRET)
 
         try:
             if cloudinary_url_env:
+                if _is_placeholder(cloudinary_url_env):
+                    self.enabled = False
+                    self.config_mode = "invalid_config"
+                    self.config_error = "CLOUDINARY_URL contains placeholder values. Please replace with real key/secret/cloud name."
+                    logger.warning(self.config_error)
+                    return
+
+                if not cloudinary_url_env.startswith("cloudinary://"):
+                    self.enabled = False
+                    self.config_mode = "invalid_config"
+                    self.config_error = "CLOUDINARY_URL must start with cloudinary://"
+                    logger.warning(self.config_error)
+                    return
+
                 cloudinary.config(cloudinary_url=cloudinary_url_env, secure=True)
                 self.enabled = True
                 self.config_mode = "cloudinary_url"
@@ -33,6 +69,13 @@ class FileService:
                 return
 
             if cloud_name and api_key and api_secret:
+                if _is_placeholder(cloud_name) or _is_placeholder(api_key) or _is_placeholder(api_secret):
+                    self.enabled = False
+                    self.config_mode = "invalid_config"
+                    self.config_error = "Cloudinary split vars contain placeholder values. Please replace with real credentials."
+                    logger.warning(self.config_error)
+                    return
+
                 cloudinary.config(
                     cloud_name=cloud_name,
                     api_key=api_key,
