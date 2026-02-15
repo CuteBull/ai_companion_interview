@@ -214,7 +214,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
               </button>
 
               {showActionMenu && (
-                <div className={`absolute bottom-12 right-0 z-50 flex w-max items-center overflow-hidden rounded-xl border shadow-2xl backdrop-blur ${
+                <div className={`absolute right-full top-1/2 z-50 mr-2 flex w-max -translate-y-1/2 items-center overflow-hidden rounded-xl border shadow-2xl backdrop-blur ${
                   isDarkMode
                     ? 'border-zinc-700 bg-zinc-800/95'
                     : 'border-stone-300 bg-white/95'
@@ -230,7 +230,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
                       isDarkMode ? 'text-zinc-100 hover:bg-zinc-700' : 'text-stone-800 hover:bg-stone-100'
                     } ${moment.liked_by_me ? 'text-rose-400' : ''}`}
                   >
-                    {moment.liked_by_me ? <HeartSolidIcon className="h-4.5 w-4.5" /> : <HeartIcon className="h-4.5 w-4.5" />}
+                    {moment.liked_by_me ? <HeartSolidIcon className="h-4 w-4 shrink-0" /> : <HeartIcon className="h-4 w-4 shrink-0" />}
                     赞
                   </button>
                   <span className={`my-1.5 w-px ${isDarkMode ? 'bg-zinc-700' : 'bg-stone-300'}`} />
@@ -246,7 +246,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
                       commentActive ? (isDarkMode ? 'text-sky-300' : 'text-sky-600') : (isDarkMode ? 'text-zinc-100' : 'text-stone-800')
                     }`}
                   >
-                    <ChatBubbleOvalLeftEllipsisIcon className="h-4.5 w-4.5" />
+                    <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 shrink-0" />
                     评论
                   </button>
                   {moment.author_name === '你' && (
@@ -260,7 +260,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
                           isDarkMode ? 'hover:bg-zinc-700' : 'hover:bg-rose-50'
                         }`}
                       >
-                        <TrashIcon className="h-4.5 w-4.5" />
+                        <TrashIcon className="h-4 w-4 shrink-0" />
                         删除
                       </button>
                     </>
