@@ -7,11 +7,11 @@ describe('App', () => {
     render(<App />)
 
     // 检查应用标题或主要元素 - 可能有多个元素包含相同文本
-    const elements = screen.getAllByText(/多模态对话/i)
+    const elements = screen.getAllByText(/AI陪伴对话/i)
     expect(elements.length).toBeGreaterThan(0)
     // 检查至少一个元素在导航栏中
     const navElement = screen.getByRole('navigation').querySelector('h1')
-    expect(navElement).toHaveTextContent(/多模态对话/i)
+    expect(navElement).toHaveTextContent(/AI陪伴对话/i)
   })
 
   it('contains navigation links', () => {

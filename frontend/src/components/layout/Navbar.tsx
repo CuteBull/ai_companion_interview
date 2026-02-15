@@ -15,11 +15,11 @@ const Navbar: React.FC = () => {
   ]
   const isChatPage = location.pathname === '/' || location.pathname === '/chat'
   const isTimelinePage = location.pathname.startsWith('/timeline')
-  const brandTitle = isTimelinePage ? '朋友圈' : '多模态对话'
-  const brandSubtitle = isTimelinePage ? '生活记录 · 点赞评论' : 'AI陪伴 · 图文语音'
+  const brandTitle = isTimelinePage ? '朋友圈' : 'AI陪伴对话'
+  const brandSubtitle = isTimelinePage ? '生活记录 · 点赞评论' : '倾诉心事，温柔回应'
   const brandDescription = isTimelinePage
     ? '在这里记录当下、发布图片、和朋友互动。'
-    : '支持文本、图片、语音输入。你可以自由倾诉，我会持续记录上下文并陪你聊下去。'
+    : '支持文字、图片、语音输入，我会记住上下文，认真接住你的每一次表达。'
 
   return (
     <nav className="sticky top-0 z-30 px-4 pt-4 md:px-6">
