@@ -19,46 +19,64 @@ interface MomentPublisherProps {
 }
 
 const MAX_IMAGES = 9
-const CITY_OPTIONS = [
-  '北京',
-  '上海',
-  '广州',
-  '深圳',
-  '杭州',
-  '南京',
-  '苏州',
-  '成都',
-  '重庆',
-  '武汉',
-  '西安',
-  '天津',
-  '长沙',
-  '郑州',
-  '青岛',
-  '宁波',
-  '厦门',
-  '福州',
-  '合肥',
-  '济南',
-  '沈阳',
-  '大连',
-  '长春',
-  '哈尔滨',
-  '昆明',
-  '贵阳',
-  '南宁',
-  '南昌',
-  '太原',
-  '石家庄',
-  '呼和浩特',
-  '兰州',
-  '乌鲁木齐',
-  '海口',
-  '三亚',
-  '澳门',
-  '香港',
-  '台北',
+type CityOption = {
+  name: string
+  pinyin: string
+}
+
+const CITY_OPTIONS: CityOption[] = [
+  { name: '澳门', pinyin: 'aomen' },
+  { name: '北京', pinyin: 'beijing' },
+  { name: '长春', pinyin: 'changchun' },
+  { name: '长沙', pinyin: 'changsha' },
+  { name: '成都', pinyin: 'chengdu' },
+  { name: '重庆', pinyin: 'chongqing' },
+  { name: '大连', pinyin: 'dalian' },
+  { name: '福州', pinyin: 'fuzhou' },
+  { name: '贵阳', pinyin: 'guiyang' },
+  { name: '广州', pinyin: 'guangzhou' },
+  { name: '哈尔滨', pinyin: 'haerbin' },
+  { name: '海口', pinyin: 'haikou' },
+  { name: '杭州', pinyin: 'hangzhou' },
+  { name: '合肥', pinyin: 'hefei' },
+  { name: '呼和浩特', pinyin: 'huhehaote' },
+  { name: '济南', pinyin: 'jinan' },
+  { name: '昆明', pinyin: 'kunming' },
+  { name: '兰州', pinyin: 'lanzhou' },
+  { name: '南昌', pinyin: 'nanchang' },
+  { name: '南京', pinyin: 'nanjing' },
+  { name: '南宁', pinyin: 'nanning' },
+  { name: '宁波', pinyin: 'ningbo' },
+  { name: '青岛', pinyin: 'qingdao' },
+  { name: '三亚', pinyin: 'sanya' },
+  { name: '上海', pinyin: 'shanghai' },
+  { name: '深圳', pinyin: 'shenzhen' },
+  { name: '沈阳', pinyin: 'shenyang' },
+  { name: '石家庄', pinyin: 'shijiazhuang' },
+  { name: '苏州', pinyin: 'suzhou' },
+  { name: '台北', pinyin: 'taibei' },
+  { name: '太原', pinyin: 'taiyuan' },
+  { name: '天津', pinyin: 'tianjin' },
+  { name: '乌鲁木齐', pinyin: 'wulumuqi' },
+  { name: '武汉', pinyin: 'wuhan' },
+  { name: '西安', pinyin: 'xian' },
+  { name: '香港', pinyin: 'xianggang' },
+  { name: '厦门', pinyin: 'xiamen' },
+  { name: '郑州', pinyin: 'zhengzhou' },
 ]
+
+const CITY_OPTIONS_BY_INITIAL = CITY_OPTIONS.reduce<Record<string, CityOption[]>>((groups, option) => {
+  const initial = option.pinyin.charAt(0).toUpperCase()
+  if (!groups[initial]) groups[initial] = []
+  groups[initial].push(option)
+  return groups
+}, {})
+
+Object.values(CITY_OPTIONS_BY_INITIAL).forEach((group) => {
+  group.sort((a, b) => a.pinyin.localeCompare(b.pinyin))
+})
+
+const SORTED_CITY_INITIALS = Object.keys(CITY_OPTIONS_BY_INITIAL).sort()
 
 const MomentPublisher: React.FC<MomentPublisherProps> = ({
   publishing,
@@ -272,7 +290,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               <select
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
-                className={`min-w-[150px] rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none ${
+                className={`w-[240px] rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none sm:w-[300px] md:w-[340px] ${
                   isDarkMode
                     ? 'border-zinc-700 bg-zinc-900 text-zinc-200 focus:border-zinc-500'
                     : 'border-stone-300 bg-white text-stone-700 focus:border-teal-500'
@@ -281,10 +299,14 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 aria-label="选择所在位置"
               >
                 <option value="">所在位置（可选）</option>
-                {CITY_OPTIONS.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
+                {SORTED_CITY_INITIALS.map((initial) => (
+                  <optgroup key={initial} label={initial}>
+                    {CITY_OPTIONS_BY_INITIAL[initial].map((city) => (
+                      <option key={city.name} value={city.name}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
