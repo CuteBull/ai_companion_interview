@@ -31,8 +31,18 @@ const renderInlineMarkdown = (content: string) => {
   return nodes.length > 0 ? nodes : content
 }
 
+const normalizeAssistantContent = (content: string) =>
+  content
+    .replace(/\r\n/g, '\n')
+    // 兼容“###1.”这种无空格写法，规范为“### 1.”
+    .replace(/(#{1,6})(\d+\.)/g, '$1 $2')
+    // 兼容“……： ### 1.”这种同一行拼接，切到新行再渲染
+    .replace(/([^\n])\s*(#{1,6}\s*\d+\.)/g, '$1\n$2')
+    .replace(/\n{3,}/g, '\n\n')
+
 const renderAssistantMarkdown = (content: string) => {
-  const lines = content.split('\n')
+  const normalizedContent = normalizeAssistantContent(content)
+  const lines = normalizedContent.split('\n')
   const blocks: React.ReactNode[] = []
   let listItems: React.ReactNode[] = []
   let listType: 'ol' | 'ul' | null = null

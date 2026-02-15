@@ -69,6 +69,23 @@ describe('MessageItem', () => {
     expect(screen.queryByText('### 1. 给自己放松的时间')).not.toBeInTheDocument()
   })
 
+  it('兼容同一行中的###编号并去掉井号', () => {
+    const aiMessage = {
+      id: '2-3',
+      role: 'assistant' as const,
+      content: '以下是一些建议： ###1. 深呼吸，放松自己 ###2. 暂时转移注意力',
+      created_at: '2024-01-01T12:01:00Z',
+      image_urls: [],
+      audio_text: null
+    }
+
+    render(<MessageItem message={aiMessage} />)
+
+    expect(screen.getByText('1. 深呼吸，放松自己')).toBeInTheDocument()
+    expect(screen.getByText('2. 暂时转移注意力')).toBeInTheDocument()
+    expect(screen.queryByText(/###/)).not.toBeInTheDocument()
+  })
+
   it('渲染带图片的消息', () => {
     const messageWithImages = {
       id: '3',
