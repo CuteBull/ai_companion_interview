@@ -6,10 +6,10 @@ from urllib.parse import urlparse, unquote
 from app.core.database import get_db
 from app.core.config import settings
 from app.schemas.chat import SessionsResponse, ClearSessionsResponse, SessionToMomentRequest
-from app.schemas.moment import MomentResponse
+from app.schemas.moment import MomentCommentResponse, MomentResponse
 from app.services.chat_service import ChatService
 from app.models.message import Message as MessageModel
-from app.models.moment import Moment as MomentModel
+from app.models.moment import Moment as MomentModel, MomentComment as MomentCommentModel
 from app.models.session import Session as SessionModel
 
 router = APIRouter()
@@ -76,24 +76,38 @@ def _to_utc_iso(value: datetime) -> str:
 
 
 def _build_moment_content(messages: list[MessageModel], fallback_title: str | None) -> str:
-    # 同时提取“你”和“AI陪伴助手”的最近对话，让朋友圈内容更完整。
-    dialog_lines: list[str] = []
+    # 正文保留用户表达，不拼接“你：/AI陪伴助手：”前缀。
+    user_lines: list[str] = []
     for msg in messages:
+        if msg.role != "user":
+            continue
         text = " ".join((msg.content or "").strip().split())
         if not text:
             continue
 
-        role_label = "你" if msg.role == "user" else "AI陪伴助手"
-        compact_text = text[:240]
-        dialog_lines.append(f"{role_label}：{compact_text}")
+        user_lines.append(text[:240])
 
-    if dialog_lines:
-        selected = dialog_lines[-6:]  # 保留最近 6 句（约 3 轮对话）
+    if user_lines:
+        selected = user_lines[-3:]
         content = "\n".join(selected)
     else:
         content = (fallback_title or "").strip() or "记录一段对话心情"
 
     return content[:2000]
+
+
+def _collect_assistant_reply_comments(messages: list[MessageModel]) -> list[str]:
+    # 将 AI 最近回复落到评论区，不带“AI陪伴助手：”文本前缀。
+    comments: list[str] = []
+    for msg in messages:
+        if msg.role != "assistant":
+            continue
+        text = " ".join((msg.content or "").strip().split())
+        if not text:
+            continue
+        comments.append(text[:1000])
+
+    return comments[-6:]
 
 
 def _collect_moment_images(messages: list[MessageModel]) -> list[str]:
@@ -185,6 +199,7 @@ def create_moment_from_session(
 
     content = _build_moment_content(messages, session.title)
     image_urls = _collect_moment_images(messages)
+    assistant_comments = _collect_assistant_reply_comments(messages)
     if not content and not image_urls:
         raise HTTPException(status_code=400, detail="该对话暂无可生成的内容")
 
@@ -197,8 +212,26 @@ def create_moment_from_session(
         session_id=session_id,
     )
     db.add(moment)
+    db.flush()
+
+    for comment_text in assistant_comments:
+        db.add(
+            MomentCommentModel(
+                moment_id=moment.id,
+                user_name="AI陪伴助手",
+                content=comment_text,
+            )
+        )
+
     db.commit()
     db.refresh(moment)
+
+    created_comments = (
+        db.query(MomentCommentModel)
+        .filter(MomentCommentModel.moment_id == moment.id)
+        .order_by(MomentCommentModel.created_at.asc())
+        .all()
+    )
 
     return MomentResponse(
         id=moment.id,
@@ -210,8 +243,19 @@ def create_moment_from_session(
         session_id=moment.session_id,
         created_at=_to_utc_iso(moment.created_at),
         like_count=0,
-        comment_count=0,
+        comment_count=len(created_comments),
         likes=[],
         liked_by_me=False,
-        comments=[],
+        comments=[
+            MomentCommentResponse(
+                id=item.id,
+                moment_id=item.moment_id,
+                parent_id=item.parent_id,
+                user_name=item.user_name,
+                reply_to_name=item.reply_to_name,
+                content=item.content,
+                created_at=_to_utc_iso(item.created_at),
+            )
+            for item in created_comments
+        ],
     )

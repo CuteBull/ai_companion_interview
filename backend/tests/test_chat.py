@@ -131,18 +131,15 @@ def test_create_moment_from_history_session(test_db):
     assert response.status_code == 200
     data = response.json()
     assert data["session_id"] == session.id
-    assert data["content"] == (
-        "你：我今天有点累\n"
-        "AI陪伴助手：抱抱你，辛苦了。\n"
-        "你：但和你聊完轻松很多\n"
-        "你：准备早点睡啦"
-    )
+    assert data["content"] == "我今天有点累\n但和你聊完轻松很多\n准备早点睡啦"
     assert data["image_urls"] == ["https://example.com/m1.jpg", "https://example.com/m2.jpg"]
     assert data["location"] == "上海"
     assert data["like_count"] == 0
-    assert data["comment_count"] == 0
+    assert data["comment_count"] == 1
     assert data["likes"] == []
-    assert data["comments"] == []
+    assert len(data["comments"]) == 1
+    assert data["comments"][0]["user_name"] == "AI陪伴助手"
+    assert data["comments"][0]["content"] == "抱抱你，辛苦了。"
 
 def test_upload_endpoint():
     """测试文件上传端点（模拟）"""
