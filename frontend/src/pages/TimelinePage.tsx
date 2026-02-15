@@ -354,7 +354,7 @@ const TimelinePage: React.FC = () => {
           >
             <ArrowLeftIcon className="h-6 w-6" />
           </Link>
-          <h1 className={`text-center text-[1.95rem] font-semibold tracking-[0.14em] ${isDarkMode ? 'text-zinc-100 drop-shadow-[0_2px_10px_rgba(56,189,248,0.25)]' : 'text-stone-900'}`}>详情</h1>
+          <h1 className={`text-center text-[1.95rem] font-semibold tracking-[0.14em] ${isDarkMode ? 'text-zinc-100 drop-shadow-[0_2px_10px_rgba(56,189,248,0.25)]' : 'text-stone-900'}`}>朋友圈</h1>
           <div className="flex items-center justify-end gap-2">
             <ThemeSwitcher compact />
             <button
