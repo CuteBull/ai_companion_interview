@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.schemas.chat import SessionsResponse, ClearSessionsResponse, SessionToMomentRequest
 from app.schemas.moment import MomentCommentResponse, MomentResponse
 from app.services.chat_service import ChatService
+from app.services.openai_service import openai_service
 from app.models.message import Message as MessageModel
 from app.models.moment import Moment as MomentModel, MomentComment as MomentCommentModel
 from app.models.session import Session as SessionModel
@@ -76,24 +77,19 @@ def _to_utc_iso(value: datetime) -> str:
 
 
 def _build_moment_content(messages: list[MessageModel], fallback_title: str | None) -> str:
-    # 正文保留用户表达，不拼接“你：/AI陪伴助手：”前缀。
+    # 兜底文案（正常流程会由模型生成）。
     user_lines: list[str] = []
     for msg in messages:
-        if msg.role != "user":
-            continue
-        text = " ".join((msg.content or "").strip().split())
-        if not text:
-            continue
-
-        user_lines.append(text[:240])
+        if msg.role == "user":
+            text = " ".join((msg.content or "").strip().split())
+            if text:
+                user_lines.append(text[:120])
 
     if user_lines:
-        selected = user_lines[-3:]
-        content = "\n".join(selected)
-    else:
-        content = (fallback_title or "").strip() or "记录一段对话心情"
+        seed = user_lines[-1].replace("怎么办", "慢慢来").strip("？?。")
+        return f"{seed}。把心事写下来，日子也会一点点变轻🌿"
 
-    return content[:2000]
+    return (fallback_title or "").strip() or "记录一段对话心情"
 
 
 def _collect_assistant_reply_comments(messages: list[MessageModel]) -> list[str]:
@@ -178,7 +174,7 @@ def get_session_messages(
 
 
 @router.post("/{session_id}/moment", response_model=MomentResponse)
-def create_moment_from_session(
+async def create_moment_from_session(
     session_id: str,
     payload: SessionToMomentRequest,
     db: Session = Depends(get_db)
@@ -197,7 +193,13 @@ def create_moment_from_session(
     if not messages:
         raise HTTPException(status_code=400, detail="该对话暂无可生成的内容")
 
-    content = _build_moment_content(messages, session.title)
+    generation_messages = [
+        {"role": msg.role, "content": msg.content}
+        for msg in messages
+    ]
+    content = await openai_service.generate_moment_copy(generation_messages, session.title)
+    if not content:
+        content = _build_moment_content(messages, session.title)
     image_urls = _collect_moment_images(messages)
     assistant_comments = _collect_assistant_reply_comments(messages)
     if not content and not image_urls:

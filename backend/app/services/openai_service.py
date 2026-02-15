@@ -3,6 +3,7 @@ from typing import List, Optional, AsyncGenerator
 import logging
 import base64
 import mimetypes
+import re
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 from openai import AsyncAzureOpenAI
@@ -24,6 +25,84 @@ class OpenAIService:
             api_version=settings.AZURE_OPENAI_TRANSCRIBE_API_VERSION,
         )
         self.deployment = settings.AZURE_OPENAI_DEPLOYMENT
+
+    def _sanitize_moment_copy(self, text: str) -> str:
+        cleaned = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        if not cleaned:
+            return ""
+
+        cleaned = re.sub(r"^\s*(今日文案|朋友圈文案|文案)\s*[:：]\s*", "", cleaned)
+        cleaned = re.sub(r"(?m)^\s*[>#\-*]+\s*", "", cleaned)
+        cleaned = re.sub(r"(?m)^\s*(你|用户|AI陪伴助手|助手)\s*[:：]\s*", "", cleaned)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+        return cleaned.strip()[:220]
+
+    def _fallback_moment_copy(self, messages: List[dict], fallback_title: Optional[str] = None) -> str:
+        user_texts = []
+        for msg in messages:
+            if msg.get("role") != "user":
+                continue
+            text = " ".join((msg.get("content") or "").strip().split())
+            if text:
+                user_texts.append(text)
+
+        context = " ".join(user_texts[-4:])
+
+        if any(k in context for k in ["宝宝", "孩子", "绿便", "拉绿", "便便"]):
+            return "被宝宝的小状况吓了一跳，先别慌，慢慢观察。愿今晚都能安心一点，日子依旧温柔🍼"
+
+        if any(k in context for k in ["心情不好", "难过", "焦虑", "压力", "烦", "委屈"]):
+            return "今天心里有点重，但说出来就轻了一些。慢慢来，愿我们都被温柔接住✨"
+
+        seed = user_texts[-1] if user_texts else (fallback_title or "记下今天的小心情")
+        seed = seed.replace("怎么办", "慢慢来").strip("？?。")
+        if len(seed) > 36:
+            seed = f"{seed[:36]}…"
+
+        return f"{seed}。把心事写下来，日子也会一点点变轻🌿"
+
+    async def generate_moment_copy(self, messages: List[dict], fallback_title: Optional[str] = None) -> str:
+        """根据对话上下文生成朋友圈短文案。"""
+        if settings.MOCK_OPENAI:
+            return self._fallback_moment_copy(messages, fallback_title)
+
+        transcript_lines = []
+        for msg in messages[-10:]:
+            role = "用户" if msg.get("role") == "user" else "陪伴助手"
+            text = " ".join((msg.get("content") or "").strip().split())
+            if not text:
+                continue
+            transcript_lines.append(f"{role}: {text[:280]}")
+
+        if not transcript_lines:
+            return self._fallback_moment_copy(messages, fallback_title)
+
+        system_prompt = (
+            "你是中文朋友圈文案助手。请基于对话生成一段用户愿意发朋友圈的短文案。"
+            "要求：1-2句话，20-80字，语气自然温柔，可带1个轻量emoji；"
+            "只输出文案本身；不要标题、列表、markdown、引号、角色前缀（如用户: 或 AI陪伴助手:）。"
+        )
+        user_prompt = "对话如下：\n" + "\n".join(transcript_lines)
+
+        try:
+            response = await self.chat_client.chat.completions.create(
+                model=self.deployment,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.8,
+                max_tokens=140,
+            )
+            content = (response.choices[0].message.content or "").strip()
+            sanitized = self._sanitize_moment_copy(content)
+            if sanitized:
+                return sanitized
+        except Exception as exc:
+            logger.warning("Generate moment copy failed, fallback enabled: %s", exc)
+
+        return self._fallback_moment_copy(messages, fallback_title)
 
     def _extract_upload_request_path(self, image_url: str) -> Optional[str]:
         if not image_url:

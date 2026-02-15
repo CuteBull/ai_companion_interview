@@ -87,7 +87,7 @@ def test_session_messages_endpoint(test_db):
     assert data["messages"][0]["content"] == "Test message"
 
 
-def test_create_moment_from_history_session(test_db):
+def test_create_moment_from_history_session(test_db, monkeypatch):
     """测试从历史对话一键生成朋友圈"""
     session = SessionModel(title="晚安前聊聊")
     test_db.add(session)
@@ -119,6 +119,11 @@ def test_create_moment_from_history_session(test_db):
     ])
     test_db.commit()
 
+    async def mock_generate_moment_copy(_messages, _fallback_title=None):
+        return "宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼"
+
+    monkeypatch.setattr(openai_service, "generate_moment_copy", mock_generate_moment_copy)
+
     response = client.post(
         f"/api/sessions/{session.id}/moment",
         json={
@@ -131,7 +136,7 @@ def test_create_moment_from_history_session(test_db):
     assert response.status_code == 200
     data = response.json()
     assert data["session_id"] == session.id
-    assert data["content"] == "我今天有点累\n但和你聊完轻松很多\n准备早点睡啦"
+    assert data["content"] == "宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼"
     assert data["image_urls"] == ["https://example.com/m1.jpg", "https://example.com/m2.jpg"]
     assert data["location"] == "上海"
     assert data["like_count"] == 0
