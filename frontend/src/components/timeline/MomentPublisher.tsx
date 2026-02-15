@@ -171,17 +171,17 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
   const disabled = publishing || uploading || (!content.trim() && imageUrls.length === 0)
 
   return (
-    <div className={`rounded-2xl border p-4 shadow-xl ${
+    <div className={`fade-rise rounded-3xl border p-4 shadow-xl ${
       isDarkMode
-        ? 'border-zinc-800 bg-zinc-900/75 shadow-black/25'
-        : 'border-stone-200 bg-white/88 shadow-stone-300/25 backdrop-blur-sm'
+        ? 'border-zinc-800 bg-zinc-900/75 shadow-black/35'
+        : 'border-white/70 bg-white/84 shadow-stone-400/20 backdrop-blur-md'
     }`}>
       <div className="flex items-start gap-3">
         <img
           src={resolveMediaUrl(selectedAvatar)}
           alt="用户头像"
-          className={`h-11 w-11 rounded-xl object-cover ring-1 ${
-            isDarkMode ? 'ring-zinc-700/80' : 'ring-stone-200'
+          className={`h-11 w-11 rounded-2xl object-cover ring-2 ${
+            isDarkMode ? 'ring-cyan-500/30' : 'ring-teal-200'
           }`}
           loading="lazy"
           decoding="async"
@@ -193,10 +193,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
             onChange={(event) => setContent(event.target.value)}
             rows={2}
             placeholder="这一刻的想法..."
-            className={`w-full resize-none rounded-xl border px-3 py-2.5 text-base focus:outline-none ${
+            className={`w-full resize-none rounded-2xl border px-3 py-2.5 text-base shadow-inner focus:outline-none ${
               isDarkMode
-                ? 'border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-500'
-                : 'border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 focus:border-teal-500'
+                ? 'border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-500 focus:border-cyan-500'
+                : 'border-stone-300 bg-white/96 text-stone-900 placeholder:text-stone-400 focus:border-teal-500'
             }`}
             disabled={publishing}
           />
@@ -233,10 +233,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={handlePickAvatar}
               disabled={publishing || avatarUploading}
-              className={`inline-flex items-center rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`inline-flex items-center rounded-xl border px-2.5 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isDarkMode
                   ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                  : 'border-stone-300 bg-white/95 text-stone-700 hover:bg-stone-100'
               }`}
             >
               {avatarUploading ? '上传中...' : '从本地选择头像'}
@@ -245,10 +245,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={() => onAvatarChange(DEFAULT_AVATAR_URL)}
               disabled={publishing || avatarUploading}
-              className={`inline-flex items-center rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`inline-flex items-center rounded-xl border px-2.5 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isDarkMode
                   ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                  : 'border-stone-300 bg-white/95 text-stone-700 hover:bg-stone-100'
               }`}
             >
               恢复默认
@@ -268,10 +268,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
                 type="button"
                 onClick={handlePickImages}
                 disabled={uploading || remainCount <= 0 || publishing}
-                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`inline-flex items-center gap-1 rounded-xl border px-2.5 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isDarkMode
                     ? 'border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                    : 'border-stone-300 bg-white/95 text-stone-700 hover:bg-stone-100'
                 }`}
               >
                 <PhotoIcon className="h-4 w-4" />
@@ -290,9 +290,9 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               <select
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
-                className={`min-w-[180px] max-w-full flex-1 rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none sm:min-w-[220px] md:min-w-[260px] ${
+                className={`min-w-[180px] max-w-full flex-1 rounded-xl border px-2.5 py-1.5 text-sm shadow-sm focus:outline-none sm:min-w-[220px] md:min-w-[260px] ${
                   isDarkMode
-                    ? 'border-zinc-700 bg-zinc-900 text-zinc-200 focus:border-zinc-500'
+                    ? 'border-zinc-700 bg-zinc-900 text-zinc-200 focus:border-cyan-500'
                     : 'border-stone-300 bg-white text-stone-700 focus:border-teal-500'
                 }`}
                 disabled={publishing}
@@ -315,10 +315,10 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               type="button"
               onClick={handlePublish}
               disabled={disabled}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`rounded-xl px-4 py-1.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isDarkMode
                   ? 'bg-zinc-100 text-zinc-900 hover:bg-white'
-                  : 'bg-teal-700 text-white hover:bg-teal-800'
+                  : 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:from-teal-700 hover:to-cyan-700'
               }`}
             >
               {publishing ? '发布中...' : '发表'}

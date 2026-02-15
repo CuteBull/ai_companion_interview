@@ -27,22 +27,23 @@ const Timeline: React.FC<TimelineProps> = ({
 }) => {
   if (moments.length === 0) {
     return (
-      <div className={`rounded-2xl border px-4 py-14 text-center shadow-sm ${
+      <div className={`fade-rise rounded-3xl border px-4 py-14 text-center shadow-xl ${
         isDarkMode
-          ? 'border-zinc-800 bg-zinc-900/70 text-zinc-400'
-          : 'border-stone-200 bg-white/85 text-stone-500 shadow-stone-300/30 backdrop-blur-sm'
+          ? 'border-zinc-800 bg-zinc-900/72 text-zinc-400 shadow-black/30'
+          : 'border-white/70 bg-white/84 text-stone-500 shadow-stone-400/20 backdrop-blur-md'
       }`}>
-        <div className={`text-lg ${isDarkMode ? 'text-zinc-200' : 'text-stone-800'}`}>还没有朋友圈动态</div>
-        <div className="mt-2 text-sm">发一条动态，记录你此刻的心情</div>
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400/30 to-cyan-500/20 text-2xl">🌿</div>
+        <div className={`text-xl ${isDarkMode ? 'text-zinc-200' : 'text-stone-800'}`}>还没有朋友圈动态</div>
+        <div className={`mt-2 text-sm ${isDarkMode ? 'text-zinc-400' : 'text-stone-500'}`}>发一条动态，记录你此刻的心情</div>
       </div>
     )
   }
 
   return (
-    <div className={`overflow-hidden rounded-2xl border ${
+    <div className={`fade-rise overflow-hidden rounded-3xl border shadow-xl ${
       isDarkMode
-        ? 'border-zinc-800 bg-zinc-950/65'
-        : 'border-stone-200 bg-white/88 shadow-xl shadow-stone-300/25 backdrop-blur-sm'
+        ? 'border-zinc-800 bg-zinc-950/70 shadow-black/35'
+        : 'border-white/70 bg-white/86 shadow-stone-400/20 backdrop-blur-md'
     }`}>
       {moments.map((moment) => (
         <MomentCard
