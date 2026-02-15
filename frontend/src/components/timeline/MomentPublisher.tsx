@@ -263,7 +263,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handlePickImages}
@@ -290,7 +290,7 @@ const MomentPublisher: React.FC<MomentPublisherProps> = ({
               <select
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
-                className={`w-[240px] rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none sm:w-[300px] md:w-[340px] ${
+                className={`min-w-[180px] max-w-full flex-1 rounded-lg border px-2.5 py-1.5 text-sm focus:outline-none sm:min-w-[220px] md:min-w-[260px] ${
                   isDarkMode
                     ? 'border-zinc-700 bg-zinc-900 text-zinc-200 focus:border-zinc-500'
                     : 'border-stone-300 bg-white text-stone-700 focus:border-teal-500'
