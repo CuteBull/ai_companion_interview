@@ -119,7 +119,7 @@ def test_create_moment_from_history_session(test_db, monkeypatch):
     ])
     test_db.commit()
 
-    async def mock_generate_moment_copy(_user_text, _assistant_texts, _fallback_title=None):
+    async def mock_generate_moment_copy(user_text, assistant_texts, fallback_title=None):
         return "宝宝小绿便只是小插曲，松口气，日子依旧温柔🍼"
 
     monkeypatch.setattr(openai_service, "generate_moment_copy", mock_generate_moment_copy)

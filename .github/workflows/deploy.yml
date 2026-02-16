@@ -10,23 +10,35 @@ jobs:
   trigger-platform-deploy:
     runs-on: ubuntu-latest
     if: >
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main')) &&
-      (secrets.VERCEL_DEPLOY_HOOK_URL != '' || secrets.RENDER_DEPLOY_HOOK_URL != '')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     env:
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
     steps:
+      - name: Check deploy hooks
+        id: hook_check
+        run: |
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ] || [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "has_hooks=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_hooks=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip when no deploy hooks configured
+        if: ${{ steps.hook_check.outputs.has_hooks != 'true' }}
+        run: echo "No deploy hook configured. Skip triggering platform deploy."
+
       - name: Trigger Vercel deploy
-        if: ${{ env.VERCEL_DEPLOY_HOOK_URL != '' }}
+        if: ${{ steps.hook_check.outputs.has_hooks == 'true' && env.VERCEL_DEPLOY_HOOK_URL != '' }}
         run: |
           curl -fsSL -X POST "$VERCEL_DEPLOY_HOOK_URL"
           echo "Triggered Vercel deploy hook."
 
       - name: Trigger Render deploy
-        if: ${{ env.RENDER_DEPLOY_HOOK_URL != '' }}
+        if: ${{ steps.hook_check.outputs.has_hooks == 'true' && env.RENDER_DEPLOY_HOOK_URL != '' }}
         run: |
           curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
           echo "Triggered Render deploy hook."
